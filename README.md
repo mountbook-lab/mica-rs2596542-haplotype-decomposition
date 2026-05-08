@@ -54,8 +54,8 @@ The `results/` directory is rebuilt from the source data each run. Most scripts 
 | **1000G integrated_call_samples_v3.20130502** | `data/integrated_call_samples_v3.20130502.ALL.panel` | population labels for 2,504 samples |
 | **GTEx v8 single-tissue eQTL** | fetched on-demand via REST API in `eqtl_axis_test.py`, `liver_replication.py`, `external_tissue_replication.py` | `https://gtexportal.org/api/v2/association/singleTissueEqtl` |
 | **Fujimoto 2016 S-table1** (LIRI-JP clinical) | `41588_2016_BFng3547_MOESM51_ESM.xlsx` (institutional access) | Nat Genet doi:10.1038/ng.3547 — 300 LIRI samples with OS/Prognosis |
-| **PCAWG LIRI-JP germline VCF** | path hardcoded to `Set LIRI_DATA_DIR to the local directory containing controlled-access LIRI-JP files.` | dbGaP/EGA controlled access |
-| **EGA-derived RNA-seq TPM matrix** | path hardcoded to `Set LIRI_DATA_DIR to the local directory containing controlled-access LIRI-JP files.` | from EGAD00001001880, 130 RK samples |
+| **PCAWG LIRI-JP germline VCF** | Not redistributed; configure local path in `liri_*.py` or via `LIRI_DATA_DIR`. | dbGaP/EGA controlled access |
+| **EGA-derived RNA-seq TPM matrix** | Not redistributed; configure local path in `liri_*.py` or via `LIRI_DATA_DIR`. | from EGAD00001001880, 130 RK samples |
 
 Edit the file-path constants at the top of `liri_*.py` if your LIRI data lives elsewhere.
 
