@@ -175,3 +175,9 @@ If you use this code or its harmonized correlations, please cite:
 ## Contact
 
 Issues and pull requests welcome at the GitHub repository.
+
+## Archived release
+
+The manuscript submission release is archived on Zenodo:
+
+DOI: 10.5281/zenodo.20080534
