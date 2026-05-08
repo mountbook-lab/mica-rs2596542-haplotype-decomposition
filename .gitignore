@@ -1,0 +1,39 @@
+# Raw/local data and generated outputs
+data/
+results/
+figures/
+tables/
+
+# Large or controlled data
+*.vcf
+*.vcf.gz
+*.bcf
+*.tbi
+*.csi
+*.bam
+*.bai
+*.cram
+*.fastq
+*.fq
+*.gz
+*.zip
+*.xlsx
+
+# Controlled-access / institutional data
+*LIRI*
+*EGA*
+*PCAWG*
+*ICGC*
+*Fujimoto*
+
+# Python/cache
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
+.DS_Store
+.vscode/

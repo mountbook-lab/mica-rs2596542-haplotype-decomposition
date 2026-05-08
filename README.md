@@ -1,0 +1,177 @@
+# MICA flip-flop — population-conditional LD topology around rs2596542
+
+Companion repository for the manuscript on **rs2596542 as a flip-flop tag SNP** in the MICA / HCP5 / HLA-B region. Reproduces the Lange 2013 Fig. 1A signed-correlation flip in 1000 Genomes phase 3, decomposes the mechanism into anchor-carrier haplotype branches, and validates a candidate eQTL axis (c5 → HLA-C ↓) in the LIRI-JP HCC cohort.
+
+```
+Anchor: rs2596542  (chr6:31,366,595 GRCh37; coded T)
+Window: chr6:31,116,595 – 31,616,595  (±250 kb, ~20,000 SNVs)
+```
+
+---
+
+## What this repo does
+
+1. **Replicate Lange 2013 Fig. 1A** in 1000 Genomes phase 3, harmonized to Lange's coded alleles (rs2596542-T, rs2244546-G, rs9275572-A). → **Figure 1**
+2. **Decompose the flip mechanism** by clustering anchor-T-carrying haplotypes (NMF k=8 + UMAP/Leiden). Show that H1 frequency varies ~7-fold between JPT (0.55) and FIN (0.08) *among carriers of the same anchor allele*. → **Figure 2**
+3. **Map each NMF component to a distinct eQTL regulation axis** using GTEx Whole_Blood. c5 = HLA-B-variable axis (HLA-B↑, HLA-C↓, HCG27↑, MICB↑); c2/c4/c6 = MICA-stable axes. → **Figure 3**
+4. **Demonstrate robustness** with MAF×distance matched permutation (10,000 perms), threshold sensitivity, k sensitivity, and 4 GTEx tissues. → **Figure 4**
+5. **Validate in LIRI-JP HCC** (n=122 with germline VCF + tumor RNA-seq). c5 → HLA-C ↓ is robust to T-stage / viral status / age / sex / immune infiltration / HLA-A class-I co-regulation adjustment. → **Figure 5**
+
+See [`docs/FIGURE_NUMBERING.md`](docs/FIGURE_NUMBERING.md) for the figure ↔ script ↔ data trace.
+
+---
+
+## Quick start
+
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Generate the example two-SNP topology table
+python3 analyze_topology_classes.py
+python3 render_figure.py          # legacy figure
+python3 harmonize_lange_signs.py  # adds Lange-coded harmonization columns
+python3 figure_1_lange_replication.py
+python3 figure_1_supplementary_AF.py
+
+# 3. Region-wide M+C scan (1000G phase 3, ±250 kb, 26 sub-pops)
+python3 analyze_region_MC_26.py    # writes results/region_per_pop_26.parquet etc.
+
+# 4. NMF on anchor-T-carrying haplotypes (k=8, 26 sub-pops)
+python3 cluster_anchor_haplotypes.py
+python3 decompose_branches_26.py   # writes results/nmf_H_26_k8.parquet
+```
+
+The `results/` directory is rebuilt from the source data each run. Most scripts take 5–60 s; the permutation tests (`permutation_all_components.py`, `simulation_ground_truth.py`) take 5–10 min.
+
+---
+
+## External data sources
+
+| Source | Where the scripts expect it | Notes |
+|---|---|---|
+| **1000 Genomes phase 3** chr6 phased VCF | `data/region_500kb.vcf.gz` (provided, 9.5 MB) — pre-subset to chr6:31,116,595–31,616,595 | full file is `ALL.chr6.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz` from `ftp.1000genomes.ebi.ac.uk/.../phase3/` |
+| **1000G integrated_call_samples_v3.20130502** | `data/integrated_call_samples_v3.20130502.ALL.panel` | population labels for 2,504 samples |
+| **GTEx v8 single-tissue eQTL** | fetched on-demand via REST API in `eqtl_axis_test.py`, `liver_replication.py`, `external_tissue_replication.py` | `https://gtexportal.org/api/v2/association/singleTissueEqtl` |
+| **Fujimoto 2016 S-table1** (LIRI-JP clinical) | `41588_2016_BFng3547_MOESM51_ESM.xlsx` (institutional access) | Nat Genet doi:10.1038/ng.3547 — 300 LIRI samples with OS/Prognosis |
+| **PCAWG LIRI-JP germline VCF** | path hardcoded to `/mnt/e/LICA-CN-analysis/LIRI-JP_analysis/data/pcawg_germline/LIRI-JP_MHC_germline.vcf.gz` | dbGaP/EGA controlled access |
+| **EGA-derived RNA-seq TPM matrix** | path hardcoded to `/mnt/e/LICA-CN-analysis/LIRI-JP_analysis/results/expression_matrix/tpm_gene_named.csv` | from EGAD00001001880, 130 RK samples |
+
+Edit the file-path constants at the top of `liri_*.py` if your LIRI data lives elsewhere.
+
+---
+
+## Pipeline phases and scripts
+
+### Phase 1 — Two-SNP example (Lange Fig. 1A)
+| Script | Purpose |
+|---|---|
+| `analyze_topology_classes.py` | per-pop n11/n10/n01, signed r, P(b\|a) vs P(a\|b), Δ, topology class for the 3 example SNPs (rs2596542 × rs2244546, rs2596542 × rs9275572) |
+| `render_figure.py` | preliminary 2-panel figure (signed r × topology class) |
+| `harmonize_lange_signs.py` | adds Lange-coded harmonization columns to per-pop topology CSVs |
+| `figure_1_lange_replication.py` | **Figure 1** — bar plot, 10 sub-pops × 2 partner SNPs, Lange-harmonized |
+| `figure_1_supplementary_AF.py` | **Suppl. Fig. 1** — allele frequency context (anchor + 2 partners) |
+| `render_figure_MC.py` | M/C plane for the 2-SNP example |
+
+### Phase 2 — Region-wide M+C scan (±250 kb)
+| Script | Purpose |
+|---|---|
+| `analyze_region_MC.py` | M/C/r/class scan in 5 EAS + 5 EUR pops |
+| `analyze_region_MC_26.py` | extended to all 26 1000G sub-pops + 5 super-pops; writes `region_per_pop_26.parquet`, `region_per_partner_26.csv` |
+| `render_region_figure.py` | M/C plane (panel A) + spatial scan (panel B) |
+| `r_vs_c_flip_test.py` | r-flip / C-flip / class-flip cross-tabulation |
+| `ld_metric_comparison.py` | flip-detection comparison across 8 LD metrics (signed_r / D / D' / Δ / C / M / r² / \|r\|) |
+
+### Phase 3 — Anchor-carrier haplotype decomposition
+| Script | Purpose |
+|---|---|
+| `cluster_anchor_haplotypes.py` | hierarchical clustering on rs2596542-T carriers (Hamming dist, k=2..5); writes `anchor_haplotype_branches.parquet`, `branch_pop_composition.csv` |
+| `decompose_branches.py` | NMF k=8 on 10-pop carriers (precursor) |
+| `decompose_branches_26.py` | NMF k=8 on 26-pop carriers; writes `nmf_H_26_k8.parquet` (8 components × 7,116 SNVs); rendered as **Figure 2** |
+| `analyze_within_branch.py` | within-branch carrier-set topology scan |
+| `afr_branches_deepdive.py` | AFR-private branch annotation |
+| `simulation_ground_truth.py` | synthetic-data validation that NMF recovers known branches |
+
+### Phase 4 — Component → eQTL axis mapping
+| Script | Purpose |
+|---|---|
+| `eqtl_axis_test.py` | GTEx Whole_Blood eQTL fetch + per-component target-gene NES; **Figure 3** |
+| `eqtl_direction_test.py` | sign coherence of NES per (component, target gene) |
+| `tag_snp_component_map.py` | rs2244546 / rs2395029 / rs11509487 → which component each tag SNP loads on |
+| `annotation_overlay.py` | gene-region + tag-SNP annotation overlay per component |
+
+### Phase 5 — Robustness & external replication
+| Script | Purpose |
+|---|---|
+| `permutation_test.py` | c5-only matched permutation (precursor) |
+| `permutation_all_components.py` | per-component MAF×distance matched permutation, 10,000 perms; **Figure 4** |
+| `k_sensitivity.py` | NMF k = 4..12 stability of c5 enrichment |
+| `threshold_sensitivity.py` | top-1% / 5% / 10% threshold sensitivity |
+| `liver_replication.py` | GTEx Liver replication of c5 axis |
+| `external_tissue_replication.py` | GTEx LCL / Lung / Skin replication |
+
+### Phase 6 — LIRI-JP HCC validation
+| Script | Purpose |
+|---|---|
+| `liri_c5_score_test.py` | build c5 proxy score per LIRI sample (Σ alt-dosage of c5 top-5% SNVs); intersect with EGA TPM matrix (n=122); 7-gene scatter |
+| `liri_c5_clinical.py` | c5 score / HLA-C × age, gender, viral_status, T_stage |
+| `liri_c5_multivariate.py` | OLS adjusted for T_stage / viral / age / sex |
+| `liri_c5_tertile_immune.py` | c5 tertile box plot + 4-model forest with immune infiltration covariates |
+| `figure_5_liri_panel.py` | **Figure 5** — final two-panel manuscript figure |
+| `liri_c5_survival.py` | Cox PH + Kaplan-Meier (DSS, OS) by c5 score |
+
+---
+
+## Repository layout
+
+```
+mica_flipflop/
+├── README.md                                  ← this file
+├── requirements.txt                           ← Python dependencies
+├── .gitignore                                 ← excludes results/, large VCFs
+├── docs/
+│   ├── FIGURE_NUMBERING.md                    ← figure ↔ script ↔ data trace
+│   ├── INTERNAL_NOTE.md                       ← exploration log (2-SNP topology arc)
+│   ├── rs2596542_allele_strand_build_mapping.md   ← allele/strand harmonization document
+│   └── rs2596542_allele_strand_build_mapping.csv  ← structured table
+├── data/
+│   ├── three_snps.vcf                         ← 3-SNP example (rs2596542, rs2244546, rs9275572)
+│   ├── region_500kb.vcf.gz                    ← 1000G phase 3, chr6:31.1-31.6 Mb (gitignored)
+│   ├── region_500kb.vcf.gz.tbi                ← tabix index (gitignored)
+│   └── integrated_call_samples_v3.20130502.ALL.panel  ← 1000G population labels
+├── results/                                   ← all derived outputs (gitignored)
+│   ├── figure_1_lange_replication.{pdf,png}
+│   ├── figure_2_branch_composition.{pdf,png}
+│   ├── figure_3_component_eqtl_axes.{pdf,png}
+│   ├── figure_4_robustness.{pdf,png}
+│   ├── figure_5_liri_panel.{pdf,png}
+│   └── ... (CSVs / parquets per script)
+└── *.py                                       ← 33 analysis scripts (flat layout)
+```
+
+---
+
+## Conventions
+
+- **Coordinates**: GRCh37 throughout (1000G phase 3 native). When citing dbSNP / GTEx (GRCh38), the offset chr6 +32,223 bp is applied automatically in `liver_replication.py` and `external_tissue_replication.py`.
+- **Allele coding**: dbSNP forward-strand ALT = 1 throughout. **Exception**: Figure 1 uses Lange 2013 coded alleles for direct comparison (sign-flip auto-applied for rs9275572 — see `rs2596542_allele_strand_build_mapping.md` §4b).
+- **Random seed**: `np.random.default_rng(0)` everywhere reproducibility matters (permutations, jitter).
+- **Figures**: matplotlib `pdf.fonttype = 42` (editable text), 9 pt body font, `savefig.bbox = "tight"`.
+
+---
+
+## Citation
+
+If you use this code or its harmonized correlations, please cite:
+
+- Lange CM et al. *Comparative genetic analyses point to HCP5 as susceptibility locus for HCV-associated hepatocellular carcinoma.* J Hepatol 59:504–509 (2013). doi:10.1016/j.jhep.2013.04.032
+- Kumar V et al. *Genome-wide association study identifies a susceptibility locus for HCV-induced hepatocellular carcinoma.* Nat Genet 43:455–458 (2011). doi:10.1038/ng.809
+- Fujimoto A et al. *Whole-genome mutational landscape and characterization of noncoding and structural mutations in liver cancer.* Nat Genet 48:500–509 (2016). doi:10.1038/ng.3547
+- 1000 Genomes Project Consortium. *A global reference for human genetic variation.* Nature 526:68–74 (2015).
+- GTEx Consortium. *The GTEx Consortium atlas of genetic regulatory effects across human tissues.* Science 369:1318–1330 (2020).
+
+---
+
+## Contact
+
+Issues and pull requests welcome at the GitHub repository.
