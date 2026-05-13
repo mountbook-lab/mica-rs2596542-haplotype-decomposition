@@ -119,6 +119,7 @@ Edit the file-path constants at the top of `liri_*.py` if your LIRI data lives e
 | `liri_c5_tertile_immune.py` | c5 tertile box plot + 4-model forest with immune infiltration covariates |
 | `figure_5_liri_panel.py` | **Figure 5** — final two-panel manuscript figure |
 | `liri_c5_survival.py` | Cox PH + Kaplan-Meier (DSS, OS) by c5 score |
+| `compare_nmf_axes_cohorts.py` | per-hap + per-sample NMF axis proportions for 1000G EAS vs LIRI-JP HCC (T-carrier and non-carrier), with viral-status stratification. Axis I = c4+c6 (MICA-stable), Axis II = c5 (HLA-B/HLA-C-variable / signed-LD reversal). |
 
 ---
 
