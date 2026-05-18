@@ -117,7 +117,7 @@ Primary studies included (Huang 2019):
 Title: "Comparative genetic analyses point to HCP5 as susceptibility
 locus for HCV-associated hepatocellular carcinoma"
 Lange et al. 2013, J Hepatol (Swiss Hepatitis C Cohort Study).
-PDF: `/mnt/c/Users/yyama/OneDrive/Documents/1-s2.0-S0168827813002870-main.pdf`
+Source PDF: Lange et al. 2013 supplementary/local copy; not redistributed.
 
 | Field | Value | Source |
 |---|---|---|

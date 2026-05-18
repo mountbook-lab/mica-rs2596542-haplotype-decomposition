@@ -19,6 +19,8 @@ Output:
 
 from __future__ import annotations
 
+import os
+
 import sys
 import time
 from pathlib import Path
@@ -30,12 +32,12 @@ from scipy.stats import pearsonr, spearmanr
 
 REPO = Path(__file__).resolve().parent
 H_PARQUET = REPO / "results/nmf_H_26_k8.parquet"
-LIRI_VCF = "/mnt/e/LICA-CN-analysis/LIRI-JP_analysis/data/pcawg_germline/LIRI-JP_MHC_germline.vcf.gz"
+LIRI_VCF = str(Path(os.environ.get("LIRI_DATA_DIR", "data/liri_jp")) / "pcawg_germline/LIRI-JP_MHC_germline.vcf.gz")
 # EGA-derived RNA-seq, gene-symbol indexed TPM, 130 RK samples (intersect 122 with genotype set).
-LIRI_EXPR = "/mnt/e/LICA-CN-analysis/LIRI-JP_analysis/results/expression_matrix/tpm_gene_named.csv"
+LIRI_EXPR = str(Path(os.environ.get("LIRI_DATA_DIR", "data/liri_jp")) / "results/expression_matrix/tpm_gene_named.csv")
 LIRI_EXPR_UNIT = "TPM"
 # Maps VCF sample UUID -> RK ID (225 matched samples).
-LIRI_VCF_TO_RK = "/mnt/e/LICA-CN-analysis/LIRI-JP_analysis/data/pcawg_germline/LIRI-JP_rs11509487_genotypes.tsv"
+LIRI_VCF_TO_RK = str(Path(os.environ.get("LIRI_DATA_DIR", "data/liri_jp")) / "pcawg_germline/LIRI-JP_rs11509487_genotypes.tsv")
 OUT = REPO / "results"
 
 C5_COMPONENT = 5

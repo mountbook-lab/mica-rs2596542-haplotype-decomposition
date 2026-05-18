@@ -14,15 +14,17 @@ Two sub-panels labeled (a) / (b) for manuscript Figure 5:
         M4: + log2(HLA-A) [strict]                   (MHC class-I co-reg)
 
 Input:
-  results/liri_c5_score.csv  (n=122 with EGA TPM)
-  /mnt/e/.../EGA_clinical_matched.csv
-  /mnt/e/.../tpm_gene_named.csv  (immune marker TPM)
+  results/liri_c5_score.csv                              (n=122 with EGA TPM)
+  $LIRI_DATA_DIR/data/clinical_data/EGA_clinical_matched.csv
+  $LIRI_DATA_DIR/results/expression_matrix/tpm_gene_named.csv  (immune marker TPM)
 
 Output:
   results/figure_5_liri_panel.{pdf,png}
 """
 
 from __future__ import annotations
+
+import os
 
 import sys
 from pathlib import Path
@@ -37,8 +39,8 @@ from scipy.stats import (
 
 REPO = Path(__file__).resolve().parent
 LIRI_C5 = REPO / "results/liri_c5_score.csv"
-CLIN = "/mnt/e/LICA-CN-analysis/LIRI-JP_analysis/data/clinical_data/EGA_clinical_matched.csv"
-EXPR = "/mnt/e/LICA-CN-analysis/LIRI-JP_analysis/results/expression_matrix/tpm_gene_named.csv"
+CLIN = str(Path(os.environ.get("LIRI_DATA_DIR", "data/liri_jp")) / "data/clinical_data/EGA_clinical_matched.csv")
+EXPR = str(Path(os.environ.get("LIRI_DATA_DIR", "data/liri_jp")) / "results/expression_matrix/tpm_gene_named.csv")
 OUT = REPO / "results"
 
 IMMUNE_GENES = ["PTPRC", "CD3D", "CD8A", "IFNG", "B2M", "TAP1"]

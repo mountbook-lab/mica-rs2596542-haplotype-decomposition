@@ -24,6 +24,8 @@ Output:
 
 from __future__ import annotations
 
+import os
+
 import sys
 from pathlib import Path
 
@@ -35,7 +37,7 @@ from lifelines.statistics import logrank_test, multivariate_logrank_test
 
 REPO = Path(__file__).resolve().parent
 LIRI_C5 = REPO / "results/liri_c5_score.csv"
-CLIN = "/mnt/e/LICA-CN-analysis/LIRI-JP_analysis/data/clinical_data/EGA_clinical_matched.csv"
+CLIN = str(Path(os.environ.get("LIRI_DATA_DIR", "data/liri_jp")) / "data/clinical_data/EGA_clinical_matched.csv")
 FUJIMOTO = REPO / "results/_fujimoto_stable1.csv"
 OUT = REPO / "results"
 

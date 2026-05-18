@@ -22,6 +22,8 @@ Survival (S6) is intentionally excluded — n = 16 events, dropped from manuscri
 
 from __future__ import annotations
 
+import os
+
 import shutil
 import sys
 from pathlib import Path
@@ -36,8 +38,8 @@ SUPP = REPO / "supplementary"
 SUPP_FIG = SUPP / "figures"
 SUPP_TAB = SUPP / "tables"
 
-EXPR = "/mnt/e/LICA-CN-analysis/LIRI-JP_analysis/results/expression_matrix/tpm_gene_named.csv"
-CLIN = "/mnt/e/LICA-CN-analysis/LIRI-JP_analysis/data/clinical_data/EGA_clinical_matched.csv"
+EXPR = str(Path(os.environ.get("LIRI_DATA_DIR", "data/liri_jp")) / "results/expression_matrix/tpm_gene_named.csv")
+CLIN = str(Path(os.environ.get("LIRI_DATA_DIR", "data/liri_jp")) / "data/clinical_data/EGA_clinical_matched.csv")
 LIRI_C5 = SRC / "liri_c5_score.csv"
 SUPP4 = SRC / "supp_4_liri_weighted_per_sample.csv"
 IMMUNE_GENES = ["PTPRC","CD3D","CD8A","IFNG","B2M","TAP1"]

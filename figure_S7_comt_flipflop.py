@@ -9,10 +9,12 @@ Three panels:
        Val carrier vs Met carrier, per sub-population.
   (C)  Population-level COMT NMF mixture heatmap (26 pops × 4 components).
 
-Inputs (existing, from ~/analyses/comt_flipflop_nmf/):
-  tables/comt_pair_metrics_by_pop.tsv
-  tables/comt_component_mixture_by_rs4680_status.tsv
-  tables/comt_component_mixture_by_pop.tsv
+Inputs (existing intermediate tables from the upstream COMT analysis;
+configure local path via the COMT_ANALYSIS_DIR environment variable,
+default `data/comt_flipflop_nmf/`):
+  $COMT_ANALYSIS_DIR/tables/comt_pair_metrics_by_pop.tsv
+  $COMT_ANALYSIS_DIR/tables/comt_component_mixture_by_rs4680_status.tsv
+  $COMT_ANALYSIS_DIR/tables/comt_component_mixture_by_pop.tsv
 
 Outputs (mica_flipflop supplementary directory):
   supplementary/figures/figure_S7_comt_flipflop.pdf
@@ -21,6 +23,7 @@ Outputs (mica_flipflop supplementary directory):
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -32,7 +35,7 @@ from matplotlib.patches import Patch
 from figure_style import apply_style, cm_to_inch
 
 REPO = Path(__file__).resolve().parent
-COMT = Path("/home/yyamada1225/analyses/comt_flipflop_nmf")
+COMT = Path(os.environ.get("COMT_ANALYSIS_DIR", "data/comt_flipflop_nmf"))
 
 PAIR_TSV = COMT / "tables/comt_pair_metrics_by_pop.tsv"
 RS4680_TSV = COMT / "tables/comt_component_mixture_by_rs4680_status.tsv"

@@ -19,6 +19,8 @@ Outputs:
 
 from __future__ import annotations
 
+import os
+
 import gzip
 import sys
 import time
@@ -36,8 +38,7 @@ from sklearn.neighbors import NearestNeighbors
 
 REPO = Path(__file__).resolve().parent
 VCF = REPO / "data/region_500kb.vcf.gz"
-PANEL = Path("/home/yyamada1225/LVexome/demo_delta_mc/thousand_g/"
-             "integrated_call_samples_v3.20130502.ALL.panel")
+PANEL = Path(os.environ.get("MICA_DATA_DIR", "data")) / "integrated_call_samples_v3.20130502.ALL.panel"
 REGION_PARTNER_CSV = REPO / "results/region_per_partner_26.csv"
 OUT = REPO / "results"
 
