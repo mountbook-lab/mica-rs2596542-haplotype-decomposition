@@ -1,0 +1,33 @@
+rsID,biological_role,grch37_pos,in_NMF_set,component,H_loading,rank_within_component_descending,rank_percentile_within_component,in_top_5pct_of_H_loadings,nearest_NMF_SNV_position,distance_bp_to_nearest_NMF_SNV,distance_bp_to_nearest_top5pct_SNV
+rs2596542,"MICA upstream (5′ flanking; ~2 kb of MICA); Kumar 2011 HCV-HCC GWAS hit; *anchor of NMF carrier set, excluded from H matrix*",31366595,False,0,0.0,4197,58.9938167509837,False,31366969.0,374.0,
+rs2596542,"MICA upstream (5′ flanking; ~2 kb of MICA); Kumar 2011 HCV-HCC GWAS hit; *anchor of NMF carrier set, excluded from H matrix*",31366595,False,1,0.0,4382,61.59359190556492,False,31366969.0,374.0,
+rs2596542,"MICA upstream (5′ flanking; ~2 kb of MICA); Kumar 2011 HCV-HCC GWAS hit; *anchor of NMF carrier set, excluded from H matrix*",31366595,False,2,0.0,3892,54.70770095559303,False,31366969.0,374.0,
+rs2596542,"MICA upstream (5′ flanking; ~2 kb of MICA); Kumar 2011 HCV-HCC GWAS hit; *anchor of NMF carrier set, excluded from H matrix*",31366595,False,3,0.3332699537277221,937,13.181562675660484,False,31366969.0,374.0,
+rs2596542,"MICA upstream (5′ flanking; ~2 kb of MICA); Kumar 2011 HCV-HCC GWAS hit; *anchor of NMF carrier set, excluded from H matrix*",31366595,False,4,0.0,4228,59.429454749859474,False,31366969.0,374.0,
+rs2596542,"MICA upstream (5′ flanking; ~2 kb of MICA); Kumar 2011 HCV-HCC GWAS hit; *anchor of NMF carrier set, excluded from H matrix*",31366595,False,5,0.0406926237046718,3601,50.61832490163013,False,31366969.0,374.0,
+rs2596542,"MICA upstream (5′ flanking; ~2 kb of MICA); Kumar 2011 HCV-HCC GWAS hit; *anchor of NMF carrier set, excluded from H matrix*",31366595,False,6,0.0124860573559999,4207,59.134345137717816,False,31366969.0,374.0,
+rs2596542,"MICA upstream (5′ flanking; ~2 kb of MICA); Kumar 2011 HCV-HCC GWAS hit; *anchor of NMF carrier set, excluded from H matrix*",31366595,False,7,0.0031108839903026,3521,49.49409780775717,False,31366969.0,374.0,
+rs2395029,"HCP5 intronic; HLA-B*57:01 surrogate; PSC, drug-hypersensitivity, HIV-control reported",31431780,True,0,0.0,4197,58.9938167509837,False,,,109832.0
+rs2395029,"HCP5 intronic; HLA-B*57:01 surrogate; PSC, drug-hypersensitivity, HIV-control reported",31431780,True,1,0.4660813808441162,2255,31.70320404721754,False,,,21453.0
+rs2395029,"HCP5 intronic; HLA-B*57:01 surrogate; PSC, drug-hypersensitivity, HIV-control reported",31431780,True,2,0.0,3892,54.70770095559303,False,,,2813.0
+rs2395029,"HCP5 intronic; HLA-B*57:01 surrogate; PSC, drug-hypersensitivity, HIV-control reported",31431780,True,3,0.0,4193,58.93760539629005,False,,,4641.0
+rs2395029,"HCP5 intronic; HLA-B*57:01 surrogate; PSC, drug-hypersensitivity, HIV-control reported",31431780,True,4,0.0,4228,59.429454749859474,False,,,12824.0
+rs2395029,"HCP5 intronic; HLA-B*57:01 surrogate; PSC, drug-hypersensitivity, HIV-control reported",31431780,True,5,0.0,4536,63.757729061270375,False,,,189629.0
+rs2395029,"HCP5 intronic; HLA-B*57:01 surrogate; PSC, drug-hypersensitivity, HIV-control reported",31431780,True,6,0.0,4362,61.31253513209669,False,,,4641.0
+rs2395029,"HCP5 intronic; HLA-B*57:01 surrogate; PSC, drug-hypersensitivity, HIV-control reported",31431780,True,7,0.0,3688,51.84092186621697,False,,,2813.0
+rs2244546,HCP5 region; Lange 2013 HCV-HCC tag with consistent allele direction across European and Japanese cohorts,31435833,True,0,0.0926512479782104,3735,52.50140528386734,False,,,113885.0
+rs2244546,HCP5 region; Lange 2013 HCV-HCC tag with consistent allele direction across European and Japanese cohorts,31435833,True,1,0.0,4382,61.59359190556492,False,,,25506.0
+rs2244546,HCP5 region; Lange 2013 HCV-HCC tag with consistent allele direction across European and Japanese cohorts,31435833,True,2,0.0,3892,54.70770095559303,False,,,6866.0
+rs2244546,HCP5 region; Lange 2013 HCV-HCC tag with consistent allele direction across European and Japanese cohorts,31435833,True,3,0.1032177507877349,2762,38.82799325463744,False,,,4181.0
+rs2244546,HCP5 region; Lange 2013 HCV-HCC tag with consistent allele direction across European and Japanese cohorts,31435833,True,4,0.0291789732873439,3415,48.00449690837549,False,,,8771.0
+rs2244546,HCP5 region; Lange 2013 HCV-HCC tag with consistent allele direction across European and Japanese cohorts,31435833,True,5,0.0,4536,63.757729061270375,False,,,193682.0
+rs2244546,HCP5 region; Lange 2013 HCV-HCC tag with consistent allele direction across European and Japanese cohorts,31435833,True,6,0.0604723058640956,3390,47.65317594154019,False,,,8694.0
+rs2244546,HCP5 region; Lange 2013 HCV-HCC tag with consistent allele direction across European and Japanese cohorts,31435833,True,7,0.0,3688,51.84092186621697,False,,,6866.0
+rs11509487,"MICB upstream (paper-1 anchor); 9-bp insertion (chr6:31,475,084 C>CTGGGGTGA); class-I-like haplotype tag",31475084,False,0,0.483062595129013,2846,40.008431703204046,False,31475127.0,43.0,
+rs11509487,"MICB upstream (paper-1 anchor); 9-bp insertion (chr6:31,475,084 C>CTGGGGTGA); class-I-like haplotype tag",31475084,False,1,0.4903354346752167,1851,26.02585722315908,False,31475127.0,43.0,
+rs11509487,"MICB upstream (paper-1 anchor); 9-bp insertion (chr6:31,475,084 C>CTGGGGTGA); class-I-like haplotype tag",31475084,False,2,0.4919427335262298,875,12.310286677908936,False,31475127.0,43.0,
+rs11509487,"MICB upstream (paper-1 anchor); 9-bp insertion (chr6:31,475,084 C>CTGGGGTGA); class-I-like haplotype tag",31475084,False,3,0.2749463617801666,2084,29.30016863406408,False,31475127.0,43.0,
+rs11509487,"MICB upstream (paper-1 anchor); 9-bp insertion (chr6:31,475,084 C>CTGGGGTGA); class-I-like haplotype tag",31475084,False,4,0.4078476130962372,2054,28.87858347386172,False,31475127.0,43.0,
+rs11509487,"MICB upstream (paper-1 anchor); 9-bp insertion (chr6:31,475,084 C>CTGGGGTGA); class-I-like haplotype tag",31475084,False,5,0.3721909821033478,2389,33.58628442945475,False,31475127.0,43.0,
+rs11509487,"MICB upstream (paper-1 anchor); 9-bp insertion (chr6:31,475,084 C>CTGGGGTGA); class-I-like haplotype tag",31475084,False,6,0.4073446393013,1511,21.247892074198987,False,31475127.0,43.0,
+rs11509487,"MICB upstream (paper-1 anchor); 9-bp insertion (chr6:31,475,084 C>CTGGGGTGA); class-I-like haplotype tag",31475084,False,7,0.4075866043567657,493,6.942102304665543,False,31475127.0,43.0,

@@ -85,9 +85,10 @@ Edit the file-path constants at the top of `liri_*.py` if your LIRI data lives e
 ### Phase 3 — Anchor-carrier haplotype decomposition
 | Script | Purpose |
 |---|---|
-| `cluster_anchor_haplotypes.py` | hierarchical clustering on rs2596542-T carriers (Hamming dist, k=2..5); writes `anchor_haplotype_branches.parquet`, `branch_pop_composition.csv` |
+| `cluster_anchor_haplotypes.py` | hierarchical clustering on rs2596542-T carriers (Hamming dist, k=2..5) — precursor diagnostic; writes `anchor_haplotype_branches.parquet`, `branch_pop_composition.csv`. *No longer the source of Figure 2; the legacy render is archived at `supplementary/figures/_archive/figure_2_branch_composition.{pdf,png}`.* |
 | `decompose_branches.py` | NMF k=8 on 10-pop carriers (precursor) |
-| `decompose_branches_26.py` | NMF k=8 on 26-pop carriers; writes `nmf_H_26_k8.parquet` (8 components × 7,116 SNVs); rendered as **Figure 2** |
+| `decompose_branches_26.py` | NMF k=8 on 26-pop carriers; writes `nmf_W_26_k8.parquet` (2,111 haplotypes × 8 components) and `nmf_H_26_k8.parquet` (8 components × 7,116 SNVs) |
+| `figure_2_nmf_k8_population_composition.py` | renders **Figure 2** (k = 8 NMF component composition by population, 5 EAS + 5 EUR) from `nmf_W_26_k8.parquet`; also writes the 26-pop supplementary companion |
 | `analyze_within_branch.py` | within-branch carrier-set topology scan |
 | `afr_branches_deepdive.py` | AFR-private branch annotation |
 | `simulation_ground_truth.py` | synthetic-data validation that NMF recovers known branches |
@@ -120,6 +121,16 @@ Edit the file-path constants at the top of `liri_*.py` if your LIRI data lives e
 | `figure_5_liri_panel.py` | **Figure 5** — final two-panel manuscript figure |
 | `liri_c5_survival.py` | Cox PH + Kaplan-Meier (DSS, OS) by c5 score |
 
+### Supplementary package — `supplementary/`
+
+The AJHG-target supplementary submission package lives under
+[`supplementary/`](supplementary/) (7 figures + 10 tables + index).
+See [`supplementary/SUPPLEMENTARY_INDEX.md`](supplementary/SUPPLEMENTARY_INDEX.md)
+for captions, source scripts, and key numbers per item. The legacy
+k = 2..5 branch-composition Figure 2 render is archived under
+[`supplementary/figures/_archive/`](supplementary/figures/_archive/)
+and is not cited from the manuscript.
+
 ---
 
 ## Repository layout
@@ -139,14 +150,25 @@ mica_flipflop/
 │   ├── region_500kb.vcf.gz                    ← 1000G phase 3, chr6:31.1-31.6 Mb (gitignored)
 │   ├── region_500kb.vcf.gz.tbi                ← tabix index (gitignored)
 │   └── integrated_call_samples_v3.20130502.ALL.panel  ← 1000G population labels
+├── supplementary/                             ← AJHG-target supplementary package
+│   ├── SUPPLEMENTARY_INDEX.md
+│   ├── figures/
+│   │   ├── figure_S1_lda_vs_nmf.{pdf,png}
+│   │   ├── figure_S2_cophenetic_k.{pdf,png}
+│   │   ├── figure_S3_seed_stability.{pdf,png}
+│   │   ├── figure_S4_liri_weighted.{pdf,png}
+│   │   ├── figure_S5_liri_hlaa_diagnostic.{pdf,png}
+│   │   ├── figure_S6_liri_sensitivity.{pdf,png}
+│   │   ├── figure_S7_comt_flipflop.{pdf,png}                  ← Supp. Fig S7 (COMT)
+│   │   └── _archive/                                          ← legacy figures (not cited)
+│   └── tables/                                                ← Supp. Tables S1–S10
 ├── results/                                   ← all derived outputs (gitignored)
 │   ├── figure_1_lange_replication.{pdf,png}
-│   ├── figure_2_branch_composition.{pdf,png}
 │   ├── figure_3_component_eqtl_axes.{pdf,png}
 │   ├── figure_4_robustness.{pdf,png}
 │   ├── figure_5_liri_panel.{pdf,png}
 │   └── ... (CSVs / parquets per script)
-└── *.py                                       ← 33 analysis scripts (flat layout)
+└── *.py                                       ← analysis scripts (flat layout)
 ```
 
 ---

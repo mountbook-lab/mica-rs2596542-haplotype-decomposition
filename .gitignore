@@ -1,8 +1,9 @@
-# Raw/local data and generated outputs
-data/
-results/
-figures/
-tables/
+# Raw/local data and generated outputs (anchored to repo root so that
+# supplementary/figures/ and supplementary/tables/ are NOT excluded)
+/data/
+/results/
+/figures/
+/tables/
 
 # Large or controlled data
 *.vcf
