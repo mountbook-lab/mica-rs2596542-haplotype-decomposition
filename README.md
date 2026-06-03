@@ -1,5 +1,5 @@
 # MICA flip-flop — population-conditional LD topology around rs2596542
-
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20080533.svg)](https://doi.org/10.5281/zenodo.20080533)
 Companion repository for the manuscript on **rs2596542 as a flip-flop tag SNP** in the MICA / HCP5 / HLA-B region. Reproduces the Lange 2013 Fig. 1A signed-correlation flip in 1000 Genomes phase 3, decomposes the mechanism into anchor-carrier haplotype branches, and validates a candidate eQTL axis (c5 → HLA-C ↓) in the LIRI-JP HCC cohort.
 
 ```
