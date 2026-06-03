@@ -1,4 +1,4 @@
-"""Supplementary Figure S7 — Reference-panel replication and NMF extension
+"""Supplementary Figure S4 — Reference-panel replication and NMF extension
 of the COMT Val158Met (rs4680) flip-flop example (Lin et al. AJHG 2007).
 
 Three panels:
@@ -235,7 +235,7 @@ def main():
     leg3._legend_box.align = "left"
 
     fig.suptitle(
-        "Supplementary Figure S7.  Reference-panel replication and NMF "
+        "Supplementary Figure S4.  Reference-panel replication and NMF "
         "extension of the COMT Val158Met (rs4680) flip-flop example",
         y=0.985, va="top", wrap=True, fontsize=10.5, fontweight="bold")
     fig.tight_layout(rect=[0.015, 0.015, 0.83, 0.965])
