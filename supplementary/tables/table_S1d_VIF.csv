@@ -1,9 +1,0 @@
-section,label,predictor,VIF
-D,VIF (full M3 design),c5_score_z,1.1048409723903108
-D,VIF (full M3 design),T_stage,1.1915530609840823
-D,VIF (full M3 design),viral_HCV,1.9558110432519322
-D,VIF (full M3 design),viral_NBNC,1.850654885787828
-D,VIF (full M3 design),age,1.3828264610544871
-D,VIF (full M3 design),sex_M,1.1995188871800742
-D,VIF (full M3 design),immune_PC1,1.9229473712778102
-D,VIF (full M3 design),log2_HLA-A,2.0961324488076523

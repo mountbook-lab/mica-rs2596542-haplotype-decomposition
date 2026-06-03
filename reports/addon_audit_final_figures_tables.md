@@ -2,8 +2,8 @@
 
 Date: 2026-05-15
 Auditor: Claude Code (hybrid pass; not a full re-audit)
-Repo root: `~/paper1-proxy-topology/`
-Working dir: `~/paper1-proxy-topology/mica_flipflop/`
+Repo root: `the working repository/`
+Working dir: `mica_flipflop/`
 
 This is an **add-on** audit limited to the components that were added
 or revised after the prior full audit. The five scope items are:
@@ -32,17 +32,17 @@ The scientific narrative to preserve is unchanged:
 |---|---|
 | `figures/main/figure_2_nmf_k8_population_composition.{pdf,png}` | Revised main Fig. 2 |
 | `figures/supplementary/figure_2_nmf_k8_26pop.{pdf,png}` | 26-pop companion |
-| `figures/supplementary/figure_S7_comt_flipflop.{pdf,png}` | New Supp. Fig. S7 (COMT) |
+| `figures/supplementary/figure_S4_comt_flipflop.{pdf,png}` | New Supp. Fig. S7 (COMT) |
 | `figures/supplementary/figure_S_coarse_carrier_space_k2_k5.{pdf,png}` | Archived legacy Fig 2 (k=2..5) |
 | `figure_2_nmf_k8_population_composition.py` | Source script for revised Fig. 2 |
-| `figure_S7_comt_flipflop.py` | Source script for Supp. Fig. S7 |
+| `figure_S4_comt_flipflop.py` | Source script for Supp. Fig. S7 |
 | `supplementary/tables/table_S2_component_top_snvs.csv` | Top-signature SNV table |
 | `supplementary/SUPPLEMENTARY_INDEX.md` | Pre-AJHG supplementary index |
 | `tables/figure_2_component_population_summary.csv` | Fig. 2 companion CSV |
 | `docs/FIGURE_NUMBERING.md` | Locked figure-numbering doc |
 | `docs/manuscript_revisions_v2.md` | v2 manuscript revisions |
 | `reports/figure_2_revision_audit.md` | Prior revision audit (Fig. 2) |
-| `README.md` (`~/paper1-proxy-topology/README.md`) | Repo README |
+| `README.md` (`the working repository/README.md`) | Repo README |
 | `supplementary/figures/` | Pre-AJHG supplementary figure dir |
 | `figures/main/`, `figures/supplementary/` | New manuscript-numbered figure dirs |
 
@@ -80,7 +80,7 @@ Recommended replacement (single row):
 | **Fig 2** | `figures/main/figure_2_nmf_k8_population_composition.{pdf,png}` | `figure_2_nmf_k8_population_composition.py` (consumes `results/nmf_W_26_k8.parquet` + `results/_supp_hap_meta.parquet`) | k = 8 NMF component composition among the 2,111 rs2596542-T carrier haplotypes, shown across the 5 EAS + 5 EUR sub-populations of Lange 2013 Fig. 1A. Panel (a) per-population mean NMF loading; panel (b) row-normalized component composition. **c4 + c6 = Axis I (MICA, EAS-enriched)**; **c5 = Axis II (HLA-B↑ / HLA-C↓, EUR-enriched)**. A 26-population companion is provided as Supplementary Figure 2; the legacy k = 2..5 hierarchical-clustering branch figure is archived as `figures/supplementary/figure_S_coarse_carrier_space_k2_k5.{pdf,png}` and is no longer cited in the main text. |
 ```
 
-**ISSUE F2-2 — `README.md` (`~/paper1-proxy-topology/README.md`) still lists `figure_2_branch_composition.{pdf,png}` (line 167) and describes `cluster_anchor_haplotypes.py` as the figure-2 script (line 88).**
+**ISSUE F2-2 — `README.md` (`the working repository/README.md`) still lists `figure_2_branch_composition.{pdf,png}` (line 167) and describes `cluster_anchor_haplotypes.py` as the figure-2 script (line 88).**
 Recommended action: update the README repo-tree and per-script summary to point to `figure_2_nmf_k8_population_composition.py` and `figures/main/figure_2_nmf_k8_population_composition.{pdf,png}`. The branch-clustering script remains in the repo as a precursor diagnostic but should no longer be described as the Figure-2 source.
 
 **ISSUE F2-3 — `docs/INTERNAL_NOTE.md` references k=2..5 branch composition in §"Method", §"Result", and the file-table at the bottom.**
@@ -99,8 +99,8 @@ The draft caption in `reports/figure_2_revision_audit.md` says k = 8 throughout 
 
 ### Passed
 
-- File present: `figures/supplementary/figure_S7_comt_flipflop.{pdf,png}` ✓
-- Source script: `figure_S7_comt_flipflop.py`, reads from `~/analyses/comt_flipflop_nmf/tables/` ✓
+- File present: `figures/supplementary/figure_S4_comt_flipflop.{pdf,png}` ✓
+- Source script: `figure_S4_comt_flipflop.py`, reads from `data/comt_flipflop_nmf/tables/` ✓
 - Three panels match the user-suggested final caption:
   - (A) Population-conditional signed LD (signed r) and asymmetry component C for rs4680 × rs2097603 across 1000G populations; blue = positive, brown = negative ✓
   - (B) Row-normalized k = 4 NMF component mixture conditional on rs4680 allele (V = Val/REF carrier, M = Met/ALT carrier) ✓
@@ -119,7 +119,7 @@ Suggested S7 entry (use the user's final caption verbatim):
 
 ```markdown
 **Figure S7 — Reference-panel replication and NMF extension of the COMT Val158Met flip-flop example.**
-Source: `figure_S7_comt_flipflop.py` (consumes `~/analyses/comt_flipflop_nmf/tables/comt_pair_metrics_by_pop.tsv`, `comt_component_mixture_by_rs4680_status.tsv`, `comt_component_mixture_by_pop.tsv`).
+Source: `figure_S4_comt_flipflop.py` (consumes `data/comt_flipflop_nmf/tables/comt_pair_metrics_by_pop.tsv`, `comt_component_mixture_by_rs4680_status.tsv`, `comt_component_mixture_by_pop.tsv`).
 (A) Population-conditional signed LD and asymmetry component C for rs4680 (Val158Met) and rs2097603 across 1000 Genomes populations. Blue and brown indicate positive and negative signed values, respectively. (B) Row-normalized k = 4 NMF component mixture conditional on rs4680 allele status, with V indicating Val/REF carriers and M indicating Met/ALT carriers. (C) Population-level COMT NMF component mixture across all 5,008 haplotypes. Compared with the MHC rs2596542 locus, the COMT decomposition is simpler and more population-like, supporting broader applicability of carrier-set decomposition while illustrating locus-dependent differences in functional interpretability.
 ```
 
@@ -135,7 +135,7 @@ supplementary/
 │   ├── figure_S4_liri_weighted.{pdf,png}
 │   ├── figure_S5_liri_hlaa_diagnostic.{pdf,png}
 │   ├── figure_S6_liri_sensitivity.{pdf,png}
-│   └── figure_S7_comt_flipflop.{pdf,png}
+│   └── figure_S4_comt_flipflop.{pdf,png}
 └── tables/
     └── ...
 ```
@@ -143,7 +143,7 @@ supplementary/
 Also change the section header from `## Supplementary Figures (6)` to `## Supplementary Figures (7)`.
 
 **ISSUE S7-2 — split supplementary figure directories.**
-The pre-AJHG supplement uses `supplementary/figures/` (S1–S6 live there), but the S7 file is at `figures/supplementary/figure_S7_comt_flipflop.{pdf,png}` *and* a copy is now also under `supplementary/figures/figure_S7_comt_flipflop.{pdf,png}`. Two parallel directories with overlapping content is fragile.
+The pre-AJHG supplement uses `supplementary/figures/` (S1–S6 live there), but the S7 file is at `figures/supplementary/figure_S4_comt_flipflop.{pdf,png}` *and* a copy is now also under `supplementary/figures/figure_S4_comt_flipflop.{pdf,png}`. Two parallel directories with overlapping content is fragile.
 Recommended action: pick one canonical location for the AJHG submission package — recommend `supplementary/figures/` (matches S1–S6 and `SUPPLEMENTARY_INDEX.md` layout block) — and have the source script write to that directory. Either remove `figures/supplementary/figure_S7_*` after the script is updated, or keep `figures/supplementary/` only for the new manuscript-numbered figures (Fig 2 k=8 supp, archived legacy). The two-directory split is the single biggest source of confusion in this revision.
 
 **ISSUE S7-3 — S7 caption text not yet written into any caption file.**
@@ -173,7 +173,7 @@ Sample rows show full IEEE-754 precision (`0.9388098120689392`, `0.9348764419555
 
 Recommended option: (a), to match the legend.
 
-Patch (one-liner, run from `~/paper1-proxy-topology/mica_flipflop/`):
+Patch (one-liner, run from `mica_flipflop/`):
 
 ```bash
 python3 -c "
@@ -213,7 +213,7 @@ Recommended Table S2 legend (final form, drop-in to `SUPPLEMENTARY_INDEX.md:40-4
 | S4 | LIRI-JP c5 weighting sensitivity | `supplementary/figures/figure_S4_liri_weighted.{pdf,png}` | ✓ |
 | S5 | HLA-A adjustment diagnostic | `supplementary/figures/figure_S5_liri_hlaa_diagnostic.{pdf,png}` | ✓ |
 | S6 | LIRI-JP regression sensitivity + multiple-testing | `supplementary/figures/figure_S6_liri_sensitivity.{pdf,png}` | ✓ |
-| S7 | COMT replication / NMF extension | `figures/supplementary/figure_S7_comt_flipflop.{pdf,png}` + duplicate copy at `supplementary/figures/figure_S7_comt_flipflop.{pdf,png}` | ✓ (location split — see S7-2) |
+| S7 | COMT replication / NMF extension | `figures/supplementary/figure_S4_comt_flipflop.{pdf,png}` + duplicate copy at `supplementary/figures/figure_S4_comt_flipflop.{pdf,png}` | ✓ (location split — see S7-2) |
 
 ### Duplicate-S6 question
 
@@ -301,7 +301,7 @@ This is true in `docs/manuscript_revisions_v2.md`. The new Figure S7 (COMT) is *
 1. Update `supplementary/SUPPLEMENTARY_INDEX.md` headers and add S7 entry. (Issue S7-1.)
 2. Round `H_loading` in `table_S2_component_top_snvs.csv` to 4 d.p., and update the Table S2 legend with the wording in §4 above. (Issues S2-1, S2-2, S2-3.)
 3. Delete the duplicate `supplementary/figures/figure_supp_6_liri_sensitivity.{pdf,png}`. (Issue N-1.)
-4. Decide canonical location of S7 (`supplementary/figures/`), update `figure_S7_comt_flipflop.py` to write there, remove the duplicate copy in `figures/supplementary/`. (Issue S7-2.)
+4. Decide canonical location of S7 (`supplementary/figures/`), update `figure_S4_comt_flipflop.py` to write there, remove the duplicate copy in `figures/supplementary/`. (Issue S7-2.)
 5. Update `docs/FIGURE_NUMBERING.md` Fig 2 row and the README repo-tree to point to `figures/main/figure_2_nmf_k8_population_composition.{pdf,png}`. (Issues F2-1, F2-2.)
 6. Delete (or move to `_archive/`) the old `supplementary/figures/figure_2_branch_composition.{pdf,png}`. (Issue F2-4.)
 7. (After U-2 decision) Renumber `figure_S_coarse_carrier_space_k2_k5` if it is to be cited as a numbered supplementary figure.

@@ -15,7 +15,7 @@ Window: chr6:31,116,595 – 31,616,595  (±250 kb, ~20,000 SNVs)
 2. **Decompose the flip mechanism** by clustering anchor-T-carrying haplotypes (NMF k=8 + UMAP/Leiden). Show that H1 frequency varies ~7-fold between JPT (0.55) and FIN (0.08) *among carriers of the same anchor allele*. → **Figure 2**
 3. **Map each NMF component to a distinct eQTL regulation axis** using GTEx Whole_Blood. c5 = HLA-B-variable axis (HLA-B↑, HLA-C↓, HCG27↑, MICB↑); c2/c4/c6 = MICA-stable axes. → **Figure 3**
 4. **Demonstrate robustness** with MAF×distance matched permutation (10,000 perms), threshold sensitivity, k sensitivity, and 4 GTEx tissues. → **Figure 4**
-5. **Validate in LIRI-JP HCC** (n=122 with germline VCF + tumor RNA-seq). c5 → HLA-C ↓ is robust to T-stage / viral status / age / sex / immune infiltration / HLA-A class-I co-regulation adjustment. → **Figure 5**
+5. **Validate in LIRI-JP HCC** (n=122 with germline VCF + tumor RNA-seq). c5 → HLA-C ↓ is robust to T-stage / viral status / age / sex / immune infiltration / HLA-A class-I co-regulation adjustment. *(LIRI dropped from this manuscript — moved to a separate paper.)*
 
 See [`docs/FIGURE_NUMBERING.md`](docs/FIGURE_NUMBERING.md) for the figure ↔ script ↔ data trace.
 
@@ -56,7 +56,7 @@ The `results/` directory is rebuilt from the source data each run. Most scripts 
 | **Fujimoto 2016 S-table1** (LIRI-JP clinical) | `41588_2016_BFng3547_MOESM51_ESM.xlsx` (institutional access) | Nat Genet doi:10.1038/ng.3547 — 300 LIRI samples with OS/Prognosis |
 | **PCAWG LIRI-JP germline VCF** | Not redistributed; configure local path in `liri_*.py` or via `LIRI_DATA_DIR`. | dbGaP/EGA controlled access |
 | **EGA-derived RNA-seq TPM matrix** | Not redistributed; configure local path in `liri_*.py` or via `LIRI_DATA_DIR`. | from EGAD00001001880, 130 RK samples |
-| **COMT intermediate tables** (Supp. Fig. S7) | `$COMT_ANALYSIS_DIR/tables/` (default `data/comt_flipflop_nmf/`); only needed to regenerate Supplementary Figure S7 | upstream COMT NMF analysis; not redistributed |
+| **COMT intermediate tables** (Supp. Fig. S4) | `$COMT_ANALYSIS_DIR/tables/` (default `data/comt_flipflop_nmf/`); only needed to regenerate Supplementary Figure S4 | upstream COMT NMF analysis; not redistributed |
 
 ### Environment variables
 
@@ -68,7 +68,7 @@ running, or export from a `.env` file.
 |---|---|---|
 | `MICA_DATA_DIR` | `data` | All scripts that read the 1000G population panel (`PANEL`) |
 | `LIRI_DATA_DIR` | `data/liri_jp` | All `liri_*.py` scripts and `make_supplementary_package.py` (PCAWG germline VCF, EGA TPM, clinical CSV) |
-| `COMT_ANALYSIS_DIR` | `data/comt_flipflop_nmf` | `figure_S7_comt_flipflop.py` (Supplementary Figure S7 inputs) |
+| `COMT_ANALYSIS_DIR` | `data/comt_flipflop_nmf` | `figure_S4_comt_flipflop.py` (Supplementary Figure S4 inputs) |
 
 Example:
 
@@ -142,7 +142,7 @@ default relative path, so a fresh checkout with data placed under
 | `liri_c5_clinical.py` | c5 score / HLA-C × age, gender, viral_status, T_stage |
 | `liri_c5_multivariate.py` | OLS adjusted for T_stage / viral / age / sex |
 | `liri_c5_tertile_immune.py` | c5 tertile box plot + 4-model forest with immune infiltration covariates |
-| `figure_5_liri_panel.py` | **Figure 5** — final two-panel manuscript figure |
+| `figure_5_liri_panel.py` | LIRI-JP two-panel figure — **dropped from this manuscript** (LIRI moved to a separate paper) |
 | `liri_c5_survival.py` | Cox PH + Kaplan-Meier (DSS, OS) by c5 score |
 
 ### Supplementary package — `supplementary/`
@@ -180,17 +180,13 @@ mica_flipflop/
 │   │   ├── figure_S1_lda_vs_nmf.{pdf,png}
 │   │   ├── figure_S2_cophenetic_k.{pdf,png}
 │   │   ├── figure_S3_seed_stability.{pdf,png}
-│   │   ├── figure_S4_liri_weighted.{pdf,png}
-│   │   ├── figure_S5_liri_hlaa_diagnostic.{pdf,png}
-│   │   ├── figure_S6_liri_sensitivity.{pdf,png}
-│   │   ├── figure_S7_comt_flipflop.{pdf,png}                  ← Supp. Fig S7 (COMT)
+│   │   ├── figure_S4_comt_flipflop.{pdf,png}                  ← Supp. Fig S4 (COMT)
 │   │   └── _archive/                                          ← legacy figures (not cited)
-│   └── tables/                                                ← Supp. Tables S1–S10
+│   └── tables/                                                ← Supp. Tables S1–S8
 ├── results/                                   ← all derived outputs (gitignored)
 │   ├── figure_1_lange_replication.{pdf,png}
 │   ├── figure_3_component_eqtl_axes.{pdf,png}
 │   ├── figure_4_robustness.{pdf,png}
-│   ├── figure_5_liri_panel.{pdf,png}
 │   └── ... (CSVs / parquets per script)
 └── *.py                                       ← analysis scripts (flat layout)
 ```

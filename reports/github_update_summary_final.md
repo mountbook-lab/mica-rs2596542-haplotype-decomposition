@@ -1,13 +1,13 @@
 # GitHub update summary — final supplementary figure/table revisions
 
 Date: 2026-05-15 (audit) → 2026-05-15 (fixes applied)
-Repo (working): `~/paper1-proxy-topology/mica_flipflop/`
-Repo (GitHub mirror): `~/github_repos/mica-rs2596542-haplotype-decomposition/` → `mountbook-lab/mica-rs2596542-haplotype-decomposition`
+Repo (working): `mica_flipflop/`
+Repo (GitHub mirror): `mica-rs2596542-haplotype-decomposition/` → `mountbook-lab/mica-rs2596542-haplotype-decomposition`
 Last GitHub commit: `2c82980 Add Zenodo DOI to README` (2026-05-08)
 
 This document lists what should be brought into the GitHub mirror to
 publish the post-2026-05-08 manuscript-revision support materials. It
-is not a `git diff` because `~/paper1-proxy-topology/` is currently
+is not a `git diff` because `the working repository/` is currently
 **uninitialised for commits** (no commits yet on `master`); changes
 must be brought to the GitHub clone manually or by `rsync`/`cp`, then
 committed there.
@@ -24,7 +24,7 @@ either repo; cross-copy + commit remains a manual step.
 | **F2-2** | README.md repo-tree + script table updated to point to `figures/main/figure_2_nmf_k8_population_composition.{pdf,png}` | `README.md` |
 | **F2-4** | Old `figure_2_branch_composition.{pdf,png}` moved to `supplementary/figures/_archive/` | filesystem |
 | **S7-1** | SUPPLEMENTARY_INDEX.md header counts updated to "7 figures, 10 tables"; new S7 entry added with the user-supplied caption | `supplementary/SUPPLEMENTARY_INDEX.md` |
-| **S7-2** | S7 PDF/PNG consolidated into `supplementary/figures/` (canonical); duplicate copies removed from `figures/supplementary/`; `figure_S7_comt_flipflop.py` OUT_DIR updated | filesystem + `figure_S7_comt_flipflop.py` |
+| **S7-2** | S7 PDF/PNG consolidated into `supplementary/figures/` (canonical); duplicate copies removed from `figures/supplementary/`; `figure_S4_comt_flipflop.py` OUT_DIR updated | filesystem + `figure_S4_comt_flipflop.py` |
 | **S7-3** | S7 caption written into SUPPLEMENTARY_INDEX.md | `supplementary/SUPPLEMENTARY_INDEX.md` |
 | **N-1** | Legacy duplicate `figure_supp_6_liri_sensitivity.{pdf,png}` deleted from `supplementary/figures/` | filesystem |
 | **S2-1** | Table S2 `H_loading` rounded to 4 decimal places (preserves all 2,840 rows and 13 columns) | `supplementary/tables/table_S2_component_top_snvs.csv` |
@@ -49,7 +49,7 @@ either repo; cross-copy + commit remains a manual step.
 | File | Purpose | Priority |
 |---|---|---|
 | `figure_2_nmf_k8_population_composition.py` | Source for the revised Figure 2 | **must** |
-| `figure_S7_comt_flipflop.py` | Source for Supplementary Figure S7 (COMT) | **must** |
+| `figure_S4_comt_flipflop.py` | Source for Supplementary Figure S7 (COMT) | **must** |
 | `figure_style.py` | Shared AJHG style helpers used by the above | **must** |
 | `supp_common.py` | Shared loader used by `supp_1..6` and Fig 2 | **must** |
 | `supp_1_lda_comparison.py` | Supp Fig S1 / Table S5 source | **must** |
@@ -79,7 +79,7 @@ either repo; cross-copy + commit remains a manual step.
 | `supplementary/figures/figure_S4_liri_weighted.{pdf,png}` | Supp Fig S4 |
 | `supplementary/figures/figure_S5_liri_hlaa_diagnostic.{pdf,png}` | Supp Fig S5 |
 | `supplementary/figures/figure_S6_liri_sensitivity.{pdf,png}` | Supp Fig S6 |
-| `supplementary/figures/figure_S7_comt_flipflop.{pdf,png}` *or* `figures/supplementary/figure_S7_comt_flipflop.{pdf,png}` | Supp Fig S7 (canonical location to be decided — see audit issue S7-2) |
+| `supplementary/figures/figure_S4_comt_flipflop.{pdf,png}` *or* `figures/supplementary/figure_S4_comt_flipflop.{pdf,png}` | Supp Fig S7 (canonical location to be decided — see audit issue S7-2) |
 
 ### 1.3 New supplementary tables
 
@@ -170,7 +170,7 @@ Finalize supplementary figure/table updates and add targeted audit
   figures/supplementary/figure_S_coarse_carrier_space_k2_k5.{pdf,png}.
 
 - Add Supplementary Figure S7 (COMT Val158Met flip-flop reference-
-  panel replication and NMF extension; figure_S7_comt_flipflop.py).
+  panel replication and NMF extension; figure_S4_comt_flipflop.py).
   COMT is an external proof-of-concept; not cited from main Results.
 
 - Add supplementary support scripts (supp_1..6, supp_common,
@@ -204,7 +204,7 @@ Remove legacy and duplicate supplementary figure files
   (legacy main Figure 2; archived copy retained at
   figures/supplementary/figure_S_coarse_carrier_space_k2_k5.{pdf,png}).
 - Consolidate Supplementary Figure S7 to a single canonical location
-  in supplementary/figures/figure_S7_comt_flipflop.{pdf,png}.
+  in supplementary/figures/figure_S4_comt_flipflop.{pdf,png}.
 ```
 
 ### Commit 3 — documentation alignment (optional)
@@ -225,8 +225,8 @@ matches this exactly.
 - [ ] Apply the five `modify before commit` items in §3.
 - [ ] Run audit-recommended one-liner to round Table S2 `H_loading` (see audit §4, issue S2-1).
 - [ ] Verify `figure_2_nmf_k8_population_composition.py` runs end-to-end from a clean checkout (its inputs `results/nmf_W_26_k8.parquet` and `results/_supp_hap_meta.parquet` are not committed — either include the parquets as Git LFS / release artifacts, or document the upstream `decompose_branches_26.py` step in the README).
-- [ ] Same for `figure_S7_comt_flipflop.py` — its inputs live in `~/analyses/comt_flipflop_nmf/tables/`. Either commit those TSVs alongside the script, or rewrite the script to bundle them under `data/comt_flipflop_nmf/`.
-- [ ] Check `figures/supplementary/figure_S7_comt_flipflop.{pdf,png}` is the freshly rendered version (matches script in this repo, not a stale older render).
+- [ ] Same for `figure_S4_comt_flipflop.py` — its inputs live in `data/comt_flipflop_nmf/tables/`. Either commit those TSVs alongside the script, or rewrite the script to bundle them under `data/comt_flipflop_nmf/`.
+- [ ] Check `figures/supplementary/figure_S4_comt_flipflop.{pdf,png}` is the freshly rendered version (matches script in this repo, not a stale older render).
 - [ ] Confirm `.gitignore` excludes `__pycache__/` and `results/` if those are not to be committed.
 - [ ] Do **not** push without explicit user authorization. The task brief explicitly says: *"Do not push automatically."*
 

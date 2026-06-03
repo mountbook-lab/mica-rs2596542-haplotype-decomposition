@@ -31,6 +31,8 @@ import numpy as np
 import pandas as pd
 from scipy.stats import hypergeom
 
+from figure_style import apply_style, WIDTH_DOUBLE_INCH, ajhg_finalize
+
 REPO = Path(__file__).resolve().parent
 H_PARQUET = REPO / "results/nmf_H_26_k8.parquet"
 OUT = REPO / "results"
@@ -80,32 +82,45 @@ def main():
     snv_pos_b38 = snv_pos_b37 + OFFSET_37_TO_38
     print(f"NMF: {H.shape[0]} components × {H.shape[1]} SNVs")
 
-    # 1. Fetch eQTL data per target gene
-    eqtl_rows = []
-    eqtl_b37_by_gene = {}
-    for gene_sym, gencode in TARGETS:
-        print(f"\nfetching {gene_sym} ({gencode}) eQTLs in {TISSUE} ...")
-        t0 = time.time()
-        try:
-            entries = fetch_all(gencode, TISSUE)
-        except Exception as e:
-            print(f"  FAILED: {e}")
-            entries = []
-        print(f"  {len(entries)} entries in {time.time()-t0:.0f}s")
-        positions_b38 = sorted({int(e.get("pos", -1)) for e in entries
-                                  if e.get("pos") is not None})
-        # Filter to our window (b38: 31,148,818 - 31,648,818)
-        in_window = [p for p in positions_b38
-                     if 31_148_818 <= p <= 31_648_818]
-        # Convert to b37 (subtract offset)
-        positions_b37 = set(p - OFFSET_37_TO_38 for p in in_window)
-        eqtl_b37_by_gene[gene_sym] = positions_b37
-        print(f"  in-window (b38): {len(in_window)}; "
-               f"unique b37 positions: {len(positions_b37)}")
-        for p in positions_b37:
-            eqtl_rows.append({"gene": gene_sym, "b37_pos": p, "tissue": TISSUE})
-    pd.DataFrame(eqtl_rows).to_csv(OUT / "eqtl_targets_per_gene.csv", index=False)
-    print(f"\nwrote {OUT/'eqtl_targets_per_gene.csv'}")
+    # 1. Fetch eQTL data per target gene (cached: reuse the CSV if it exists
+    #    so layout-only re-renders don't repeat the slow paginated GTEx call)
+    cache_path = OUT / "eqtl_targets_per_gene.csv"
+    if cache_path.exists():
+        print(f"\nloading cached eQTL positions from {cache_path}")
+        cached = pd.read_csv(cache_path)
+        eqtl_b37_by_gene = {
+            g: set(cached[cached["gene"] == g]["b37_pos"].astype(int))
+            for g, _ in TARGETS
+        }
+        for g, _ in TARGETS:
+            print(f"  {g}: {len(eqtl_b37_by_gene[g])} unique b37 positions")
+    else:
+        eqtl_rows = []
+        eqtl_b37_by_gene = {}
+        for gene_sym, gencode in TARGETS:
+            print(f"\nfetching {gene_sym} ({gencode}) eQTLs in {TISSUE} ...")
+            t0 = time.time()
+            try:
+                entries = fetch_all(gencode, TISSUE)
+            except Exception as e:
+                print(f"  FAILED: {e}")
+                entries = []
+            print(f"  {len(entries)} entries in {time.time()-t0:.0f}s")
+            positions_b38 = sorted({int(e.get("pos", -1)) for e in entries
+                                      if e.get("pos") is not None})
+            # Filter to our window (b38: 31,148,818 - 31,648,818)
+            in_window = [p for p in positions_b38
+                         if 31_148_818 <= p <= 31_648_818]
+            # Convert to b37 (subtract offset)
+            positions_b37 = set(p - OFFSET_37_TO_38 for p in in_window)
+            eqtl_b37_by_gene[gene_sym] = positions_b37
+            print(f"  in-window (b38): {len(in_window)}; "
+                   f"unique b37 positions: {len(positions_b37)}")
+            for p in positions_b37:
+                eqtl_rows.append({"gene": gene_sym, "b37_pos": p,
+                                  "tissue": TISSUE})
+        pd.DataFrame(eqtl_rows).to_csv(cache_path, index=False)
+        print(f"\nwrote {cache_path}")
 
     # 2. NMF top-5% SNV set per component
     h_mat = H.values
@@ -137,6 +152,16 @@ def main():
                 p_val = float(hypergeom.sf(x - 1, N_uni, K_succ, n_draws))
                 expected = n_draws * K_succ / N_uni
                 fold = x / expected if expected > 0 else float("nan")
+            # neglog10_p: NaN when there is nothing to test (K_succ=0), inf
+            # only when p underflowed float64 (genuinely tiny). Without this
+            # guard the "no eQTLs in window" case (e.g. HCP5) prints ">308",
+            # which falsely reads as overwhelming significance.
+            if K_succ == 0 or np.isnan(p_val):
+                neglog10 = float("nan")
+            elif p_val > 0:
+                neglog10 = float(-np.log10(p_val))
+            else:
+                neglog10 = float("inf")
             rows.append({
                 "component": c, "target_gene": gene_sym,
                 "n_eqtl_in_window": K_succ,
@@ -145,7 +170,7 @@ def main():
                 "expected": expected,
                 "fold_enrichment": fold,
                 "hyper_p": p_val,
-                "neglog10_p": -np.log10(p_val) if (p_val and p_val > 0) else float("inf"),
+                "neglog10_p": neglog10,
             })
     enrich = pd.DataFrame(rows)
     enrich.to_csv(OUT / "component_x_eqtl_target.csv", index=False)
@@ -164,57 +189,145 @@ def main():
     p = p[cols]
     print(p.to_string())
 
-    # 5. Figure
-    plt.rcParams.update({
-        "font.family": "DejaVu Sans", "font.size": 9,
-        "savefig.bbox": "tight", "pdf.fonttype": 42,
-        "axes.spines.top": False, "axes.spines.right": False,
-    })
-    fig, axes = plt.subplots(1, 2, figsize=(12, 4.4))
+    # Main-figure columns: HCP5 dropped (entirely n/a in both panels due to
+    # insufficient top-5% × eQTL overlap for enrichment testing). Full HCP5
+    # column remains in component_x_eqtl_target.csv and is described in the
+    # legend; render it only in the supplementary table.
+    MAIN_COLS = ["MICA", "MICB", "HLA-B", "HLA-C", "HCG27"]
+    fold_main = fold[MAIN_COLS]
+    p_main = p[MAIN_COLS]
 
-    # Panel A: fold enrichment heatmap
+    # 5. Figure — 3 panels:
+    #   (a) eQTL fold enrichment  (component × gene; Whole_Blood)
+    #   (b) -log10 p              (component × gene; Whole_Blood)
+    #   (c) Cross-tissue mean NES (axis × tissue) — direction analysis
+    apply_style()
+    from matplotlib.gridspec import GridSpec
+    fig = plt.figure(figsize=(WIDTH_DOUBLE_INCH, 5.8))
+    gs = GridSpec(2, 2, figure=fig, height_ratios=[3.0, 2.0],
+                   hspace=0.75, wspace=0.30,
+                   left=0.26, right=0.95, top=0.93, bottom=0.10)
+    axes = [fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1]),
+             fig.add_subplot(gs[1, :])]
+
+    # Panel A: fold enrichment heatmap. HCP5 column dropped from the main
+    # figure (insufficient overlap → all-n/a); HCP5 is retained in
+    # component_x_eqtl_target.csv and described in the legend.
     ax = axes[0]
-    fmat = fold.values
+    fmat = fold_main.values
     im = ax.imshow(fmat, aspect="auto", cmap="RdBu_r",
                     vmin=0, vmax=4, interpolation="nearest")
-    ax.set_xticks(range(len(cols))); ax.set_xticklabels(cols,
-                                                          rotation=30, ha="right")
+    ax.set_xticks(range(len(MAIN_COLS)))
+    ax.set_xticklabels(MAIN_COLS, rotation=30, ha="right")
     ax.set_yticks(range(K)); ax.set_yticklabels([f"c{c}" for c in range(K)])
     for i in range(K):
-        for j in range(len(cols)):
+        for j in range(len(MAIN_COLS)):
             v = fmat[i, j]
-            if not np.isnan(v):
+            if np.isnan(v):
+                ax.text(j, i, "n/a", ha="center", va="center",
+                         fontsize=7.5, color="#666", style="italic")
+            else:
                 ax.text(j, i, f"{v:.1f}", ha="center", va="center",
                          fontsize=8, color="#fff" if v > 2.4 else "#111")
     fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02, label="fold")
-    ax.set_title("A. NMF component × target-gene eQTL fold enrichment\n"
-                  "(top 5% SNVs vs Whole_Blood eQTLs)", loc="left", fontsize=10)
+    ax.set_title("(a) eQTL fold enrichment", loc="left", fontsize=10)
 
-    # Panel B: -log10 p heatmap
+    # Panel B: -log10 p heatmap. Color scale AND printed cell values capped
+    # at 15 so the panel is internally consistent: cells whose true −log10 p
+    # exceeds 15 are labelled ">15" rather than rendered as raw values that
+    # would mismatch the saturated color scale.
     ax = axes[1]
-    pmat = p.values.astype(float)
-    pmat_capped = np.where(np.isnan(pmat), 0, np.minimum(pmat, 30))
+    pmat = p_main.values.astype(float)
+    pmat_capped = np.where(np.isinf(pmat), 15,
+                              np.where(np.isnan(pmat), 0, np.minimum(pmat, 15)))
     im = ax.imshow(pmat_capped, aspect="auto", cmap="Blues",
                     vmin=0, vmax=15, interpolation="nearest")
-    ax.set_xticks(range(len(cols))); ax.set_xticklabels(cols,
-                                                          rotation=30, ha="right")
+    ax.set_xticks(range(len(MAIN_COLS)))
+    ax.set_xticklabels(MAIN_COLS, rotation=30, ha="right")
     ax.set_yticks(range(K)); ax.set_yticklabels([f"c{c}" for c in range(K)])
     for i in range(K):
-        for j in range(len(cols)):
+        for j in range(len(MAIN_COLS)):
             v = pmat[i, j]
-            if not np.isnan(v) and v >= 1:
+            if np.isnan(v):
+                ax.text(j, i, "n/a", ha="center", va="center",
+                         fontsize=7.5, color="#666", style="italic")
+                continue
+            if np.isinf(v) or v > 15:
+                ax.text(j, i, ">15", ha="center", va="center",
+                         fontsize=8, color="#fff", fontweight="bold")
+            elif v >= 1:
                 ax.text(j, i, f"{v:.0f}", ha="center", va="center",
                          fontsize=8, color="#fff" if v > 8 else "#111")
     fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02, label=r"$-\log_{10} p$")
-    ax.set_title("B. Hypergeometric significance (capped at 30)",
+    ax.set_title(r"(b) $-\log_{10}\,P$", loc="left", fontsize=10)
+
+    # Panel C: Cross-tissue mean NES direction analysis.
+    # Reads results/axis_sign_coherence_matrix.csv (built by
+    # axis_sign_coherence_matrix.py). Axis I: c4/c6 × MICA;
+    # Axis II: c5 × HLA-B / HLA-C. Every cell shown has sign coherence
+    # = 1.00 in 6/6 tissues, confirming unidirectional eQTL effects.
+    ax = axes[2]
+    coh = pd.read_csv(OUT / "axis_sign_coherence_matrix.csv")
+    coh["row"] = coh["component"] + " × " + coh["gene"]
+    row_order = ["c4 × MICA", "c6 × MICA", "c5 × HLA-B", "c5 × HLA-C"]
+    tissue_order = ["Whole_Blood", "Liver",
+                     "Cells_EBV-transformed_lymphocytes",
+                     "Lung", "Skin_Sun_Exposed_Lower_leg",
+                     "Colon_Transverse"]
+    tissue_labels = ["Whole\nBlood", "Liver", "LCL",
+                      "Lung", "Skin", "Colon"]
+    mat = (coh[coh["row"].isin(row_order)]
+            .pivot(index="row", columns="tissue", values="mean_NES")
+            .loc[row_order, tissue_order])
+    coh_mat = (coh[coh["row"].isin(row_order)]
+                .pivot(index="row", columns="tissue", values="sign_coherence")
+                .loc[row_order, tissue_order])
+    im = ax.imshow(mat.values, aspect="auto", cmap="RdBu_r",
+                    vmin=-0.75, vmax=0.75, interpolation="nearest")
+    ax.set_xticks(range(len(tissue_order)))
+    ax.set_xticklabels(tissue_labels, fontsize=8.5)
+    ax.set_yticks(range(len(row_order)))
+    # Embed Axis I/II prefix into the y-tick labels themselves; the
+    # gridspec left margin (left=0.20) reserves enough room for them.
+    # Use Axis-I / Axis-II spelled out so the Roman numerals can't be
+    # mistaken for each other in low-res renderings.
+    row_labels = [
+        "Axis-I    c4 × MICA",
+        "Axis-I    c6 × MICA",
+        "Axis-II  c5 × HLA-B",
+        "Axis-II  c5 × HLA-C",
+    ]
+    ax.set_yticklabels(row_labels, fontsize=9, family="monospace")
+    for i in range(len(row_order)):
+        for j in range(len(tissue_order)):
+            v = mat.values[i, j]
+            c_val = coh_mat.values[i, j]
+            if np.isnan(v):
+                ax.text(j, i, "n/a", ha="center", va="center",
+                         fontsize=7.5, color="#666", style="italic")
+            else:
+                txt_color = "#fff" if abs(v) > 0.45 else "#111"
+                ax.text(j, i, f"{v:+.2f}", ha="center", va="center",
+                         fontsize=8.5, color=txt_color)
+    # Light horizontal separator between Axis I (rows 0-1) and Axis II
+    # (rows 2-3) — a thin gray line just below row 1 inside the heatmap.
+    ax.axhline(1.5, color="#222", lw=0.7, alpha=0.6)
+    fig.colorbar(im, ax=ax, fraction=0.025, pad=0.02,
+                  label="mean NES   (RdBu: red = ↑, blue = ↓)")
+
+    # (Axis I/II prefix is now embedded directly in y-tick labels above.)
+    ax.set_title("(c) Cross-tissue mean NES\n"
+                  "      (sign coherence = 1.00 in every shown cell; n per cell in Table S8)",
                   loc="left", fontsize=10)
 
     fig.suptitle(
-        "Do NMF components correspond to distinct eQTL signals?\n"
-        "(rs2596542-T anchor-carrier branches, GTEx v8 Whole_Blood)",
-        fontsize=11, y=1.04,
+        "Figure 3.  NMF components separate MICA↓ and HLA-B↑/HLA-C↓ "
+        "regulatory axes.",
+        fontsize=9.5, y=0.99, va="top", wrap=True,
     )
-    fig.tight_layout()
+    # Note: do NOT call ajhg_finalize() here — its tight_layout() would
+    # override the explicit gridspec left/right margins we set above to
+    # accommodate the wider "(Axis I) c4 × MICA" y-tick labels in panel (c).
     out = OUT / "figure_component_eqtl_axis"
     fig.savefig(out.with_suffix(".pdf"))
     fig.savefig(out.with_suffix(".png"), dpi=300)

@@ -17,8 +17,8 @@ default `data/comt_flipflop_nmf/`):
   $COMT_ANALYSIS_DIR/tables/comt_component_mixture_by_pop.tsv
 
 Outputs (mica_flipflop supplementary directory):
-  supplementary/figures/figure_S7_comt_flipflop.pdf
-  supplementary/figures/figure_S7_comt_flipflop.png
+  supplementary/figures/figure_S4_comt_flipflop.pdf
+  supplementary/figures/figure_S4_comt_flipflop.png
 """
 
 from __future__ import annotations
@@ -241,7 +241,7 @@ def main():
     fig.tight_layout(rect=[0.015, 0.015, 0.83, 0.965])
 
     for ext in ("pdf", "png"):
-        path = OUT_DIR / f"figure_S7_comt_flipflop.{ext}"
+        path = OUT_DIR / f"figure_S4_comt_flipflop.{ext}"
         fig.savefig(path, bbox_inches="tight",
                     dpi=300 if ext == "png" else None)
         print(f"wrote {path}")

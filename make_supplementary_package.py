@@ -4,25 +4,23 @@ Outputs (under supplementary/):
   figures/figure_S1_lda_vs_nmf.{pdf,png}
   figures/figure_S2_cophenetic_k.{pdf,png}
   figures/figure_S3_seed_stability.{pdf,png}
-  figures/figure_S4_liri_weighted.{pdf,png}
-  figures/figure_S5_liri_hlaa_diagnostic.{pdf,png}
+  figures/figure_S4_comt_flipflop.{pdf,png}
 
-  tables/table_S1_regression_models.csv      ← assembled here (multi-section)
-  tables/table_S2_component_top_snvs.csv     ← assembled here from nmf_H_26_k8.parquet
-  tables/table_S3_matched_permutation.csv    ← copied from permutation_all_components.csv
-  tables/table_S4_gtex_tissue_eqtl_NES.csv   ← merged Whole_Blood + Liver + LCL/Lung/Skin
-  tables/table_S5_lda_vs_nmf.csv             ← copied from supp_1_lda_vs_nmf.csv
-  tables/table_S6_nmf_rank_cophenetic.csv    ← copied from supp_2_cophenetic_k.csv
-  tables/table_S7_nmf_seed_stability.csv     ← copied from supp_3_seed_stability_per_component.csv
+  tables/  — final numbering (regression / VIF / per-seed / LIRI tables removed):
+  Table_S1_top_SNVs.csv      ← assembled here from nmf_H_26_k8.parquet      (was table_S2)
+  Table_S2_permutation.csv   ← permutation_all_components.csv               (was table_S3)
+  Table_S3_GTEx_NES.csv      ← merged GTEx Whole_Blood/Liver/LCL/Lung/Skin  (was table_S4)
+  Table_S4_LDA_vs_NMF.csv    ← supp_1_lda_vs_nmf.csv                        (was table_S5)
+  Table_S5_rank.csv          ← supp_2_cophenetic_k.csv                      (was table_S6)
+  Table_S6_seed.csv          ← supp_3_seed_stability_per_component.csv      (was table_S7)
+  Table_S7A_tags_long.csv    ← tag SNP → component mapping, long            (was table_S8)
+  Table_S7B_tags_wide.csv    ← tag SNP → component mapping, wide            (was table_S8 wide)
+  Table_S8_sign_coh.csv      ← results/axis_sign_coherence_matrix.csv       (was table_S10)
 
   SUPPLEMENTARY_INDEX.md                      ← caption + source + key numbers per item
-
-Survival (S6) is intentionally excluded — n = 16 events, dropped from manuscript on 2026-05-08.
 """
 
 from __future__ import annotations
-
-import os
 
 import shutil
 import sys
@@ -30,7 +28,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import statsmodels.api as sm
 
 REPO = Path(__file__).resolve().parent
 SRC = REPO / "results"
@@ -38,171 +35,11 @@ SUPP = REPO / "supplementary"
 SUPP_FIG = SUPP / "figures"
 SUPP_TAB = SUPP / "tables"
 
-EXPR = str(Path(os.environ.get("LIRI_DATA_DIR", "data/liri_jp")) / "results/expression_matrix/tpm_gene_named.csv")
-CLIN = str(Path(os.environ.get("LIRI_DATA_DIR", "data/liri_jp")) / "data/clinical_data/EGA_clinical_matched.csv")
-LIRI_C5 = SRC / "liri_c5_score.csv"
-SUPP4 = SRC / "supp_4_liri_weighted_per_sample.csv"
-IMMUNE_GENES = ["PTPRC","CD3D","CD8A","IFNG","B2M","TAP1"]
 
-
-def fit_table_s1():
-    """Assemble Table S1 — regression models.
-
-    Section A:  HLA-C ~ c5 unweighted, M0 → M3 progressive adjustment
-    Section B:  HLA-C ~ c5 (full M3) — score variants {unweighted, weighted, NNLS}
-    Section C:  Each gene (HLA-B / HLA-C / MICA / MICB / HCG27 / HCP5 / HLA-A) ~ c5 unweighted, full M3
-    Section D:  VIF (c5_score_z, log2_HLA_A) for the full-model design matrix
-    """
-    df = pd.read_csv(LIRI_C5)
-    clin = pd.read_csv(CLIN).rename(columns={"clinical_sample_id":"rk_id"})
-    df = df.merge(clin[["rk_id","age","gender","viral_status","T_stage"]], on="rk_id")
-    # Complete-case filter dropping 5 of 122 LIRI-JP donors:
-    #   - 2 with `viral_status == "HBV, HCV"` (co-infection — not in {HBV/HCV/NBNC})
-    #   - 3 with whitespace-suffix entries (`HBV `, `HCV `) that fall outside the strict isin filter
-    # Rationale: the multivariable HLA-C model requires viral_status to be a
-    # 3-level categorical for HCV / NBNC dummy coding; co-infection and
-    # whitespace-irregular rows would either inflate categories or be silently
-    # dropped by statsmodels. Documented in supplementary/SUPPLEMENTARY_INDEX.md
-    # § "LIRI-JP analytic sample-size note (n = 122 vs n = 117)".
-    df = df[df["T_stage"].notna() & df["age"].notna()
-             & df["viral_status"].isin(["HBV","HCV","NBNC"])].copy()
-
-    # immune markers
-    expr = pd.read_csv(EXPR)
-    gcol = expr.columns[0]; expr_samples = list(expr.columns[1:])
-    feats = expr[gcol].astype(str)
-    for g in IMMUNE_GENES + ["HLA-A","HLA-B","HLA-C","MICA","MICB","HCG27","HCP5"]:
-        m = (feats == g)
-        if not m.any(): continue
-        row = expr.loc[m].iloc[0]
-        df[g] = df["rk_id"].map(lambda rk: row[rk] if rk in expr_samples else np.nan)
-        df[f"log2_{g}"] = np.log2(df[g].astype(float) + 1)
-
-    cs = df["c5_score"].astype(float)
-    df["c5_score_z"] = (cs - cs.mean()) / cs.std(ddof=0)
-    df["sex_M"]       = (df["gender"] == "M").astype(int)
-    df["viral_HCV"]   = (df["viral_status"] == "HCV").astype(int)
-    df["viral_NBNC"]  = (df["viral_status"] == "NBNC").astype(int)
-    df["age"]         = df["age"].astype(float)
-    df["T_stage"]     = df["T_stage"].astype(float)
-
-    # immune PC1
-    Z = df[[f"log2_{g}" for g in IMMUNE_GENES]].copy()
-    for c in Z.columns:
-        Z[c] = (Z[c] - Z[c].mean()) / Z[c].std(ddof=0)
-    Zv = Z.dropna().values
-    U, S, Vt = np.linalg.svd(Zv, full_matrices=False)
-    df["immune_PC1"] = (Z.values @ Vt[0])
-
-    rows = []
-
-    def fit(Y_col, X_cols, score_col, section, label):
-        sub = df[[Y_col, score_col] + [c for c in X_cols if c != score_col]].dropna()
-        # rename score col to "score_z" for unified tables (use as-is if already z)
-        if score_col != "score_z":
-            sub = sub.copy()
-            s = sub[score_col].astype(float)
-            sub["score_z"] = (s - s.mean()) / s.std(ddof=0)
-        X = sub[["score_z"] + [c for c in X_cols if c != score_col]]
-        m = sm.OLS(sub[Y_col], sm.add_constant(X)).fit()
-        ci_lo, ci_hi = m.conf_int().loc["score_z"].tolist()
-        return {
-            "section": section,
-            "label":   label,
-            "outcome": Y_col,
-            "score":   score_col,
-            "n":       int(m.nobs),
-            "beta":    float(m.params["score_z"]),
-            "se":      float(m.bse["score_z"]),
-            "t":       float(m.tvalues["score_z"]),
-            "p":       float(m.pvalues["score_z"]),
-            "ci_lo_95": float(ci_lo), "ci_hi_95": float(ci_hi),
-            "r2":      float(m.rsquared),
-            "covariates_in_model": ", ".join(X.columns.tolist()),
-        }
-
-    # ---------- Section A: HLA-C ~ c5 unweighted, M0..M3 ----------
-    base = ["T_stage","viral_HCV","viral_NBNC","age","sex_M"]
-    A = [
-        fit("log2_HLA-C", ["c5_score_z"], "c5_score_z",
-             "A", "M0: c5 only"),
-        fit("log2_HLA-C", ["c5_score_z"] + base, "c5_score_z",
-             "A", "M1: + clinical"),
-        fit("log2_HLA-C", ["c5_score_z"] + base + ["immune_PC1"], "c5_score_z",
-             "A", "M2: + immune_PC1"),
-        fit("log2_HLA-C", ["c5_score_z"] + base + ["immune_PC1","log2_HLA-A"], "c5_score_z",
-             "A", "M3: + immune_PC1 + HLA-A"),
-    ]
-    rows.extend(A)
-
-    # ---------- Section B: HLA-C ~ c5 (M3 full) — score variants ----------
-    # Pull weighted / NNLS from supp_4_liri_weighted_per_sample.csv
-    if SUPP4.exists():
-        s4 = pd.read_csv(SUPP4)
-        # Bring the alternative scores in
-        s4 = s4[["rk_id","c5_unweighted","c5_weighted","c5_nnls"]]
-        df_b = df.merge(s4, on="rk_id", how="left")
-        for sc, lab in [("c5_unweighted","unweighted (top-5%)"),
-                          ("c5_weighted",  "H-loading weighted (all SNVs)"),
-                          ("c5_nnls",      "NNLS-projected")]:
-            sub = df_b[["log2_HLA-C", sc] + base + ["immune_PC1","log2_HLA-A"]].dropna()
-            if len(sub) < 10: continue
-            s = sub[sc].astype(float)
-            sub = sub.copy()
-            sub["score_z"] = (s - s.mean()) / s.std(ddof=0)
-            X = sub[["score_z"] + base + ["immune_PC1","log2_HLA-A"]]
-            m = sm.OLS(sub["log2_HLA-C"], sm.add_constant(X)).fit()
-            ci_lo, ci_hi = m.conf_int().loc["score_z"].tolist()
-            rows.append({
-                "section": "B",
-                "label":   f"M3 score variant: {lab}",
-                "outcome": "log2_HLA-C",
-                "score":   sc,
-                "n":       int(m.nobs),
-                "beta":    float(m.params["score_z"]),
-                "se":      float(m.bse["score_z"]),
-                "t":       float(m.tvalues["score_z"]),
-                "p":       float(m.pvalues["score_z"]),
-                "ci_lo_95": float(ci_lo), "ci_hi_95": float(ci_hi),
-                "r2":      float(m.rsquared),
-                "covariates_in_model": ", ".join(X.columns.tolist()),
-            })
-
-    # ---------- Section C: each gene as outcome, M3 full ----------
-    full_covars = base + ["immune_PC1","log2_HLA-A"]
-    for g in ["HLA-B","HLA-C","MICA","MICB","HCG27","HCP5","HLA-A"]:
-        Y = f"log2_{g}"
-        if Y not in df.columns: continue
-        if g == "HLA-A":
-            covars = base + ["immune_PC1"]   # avoid HLA-A on both sides
-            label = "M3 (no HLA-A on RHS): outcome = HLA-A"
-        else:
-            covars = full_covars
-            label = f"M3 full: outcome = {g}"
-        rows.append(fit(Y, ["c5_score_z"] + covars, "c5_score_z", "C", label))
-
-    # ---------- Section D: VIF for full M3 design ----------
-    Xm3 = df[["c5_score_z"] + full_covars].dropna()
-    def vif(Xdf, target):
-        y = Xdf[target]; X = sm.add_constant(Xdf.drop(columns=[target]))
-        m = sm.OLS(y, X).fit()
-        return 1.0 / (1.0 - m.rsquared) if m.rsquared < 1 else float("inf")
-
-    vif_rows = []
-    for col in Xm3.columns:
-        vif_rows.append({"section":"D", "label":"VIF (full M3 design)",
-                          "predictor":col, "VIF": float(vif(Xm3, col))})
-    df_vif = pd.DataFrame(vif_rows)
-
-    df_main = pd.DataFrame(rows)
-    df_main = df_main[["section","label","outcome","score","n",
-                          "beta","se","t","p","ci_lo_95","ci_hi_95","r2",
-                          "covariates_in_model"]]
-    return df_main, df_vif
 
 
 def extract_top_snvs():
-    """Table S2 — top 5% SNVs per NMF component with annotations."""
+    """Table S1 — top 5% SNVs per NMF component with annotations."""
     H = pd.read_parquet(SRC / "nmf_H_26_k8.parquet")
     nmf_pos = np.array([int(c) for c in H.columns])
     h_mat = H.values   # (8, 7116)
@@ -404,20 +241,13 @@ def main():
     SUPP_TAB.mkdir(parents=True, exist_ok=True)
 
     # ===== Tables =====
-    print("[Table S1] regression models ...")
-    df_main, df_vif = fit_table_s1()
-    df_main.to_csv(SUPP_TAB / "table_S1_regression_models.csv", index=False)
-    df_vif.to_csv(SUPP_TAB / "table_S1d_VIF.csv", index=False)
-    print(f"  wrote table_S1_regression_models.csv  ({len(df_main)} rows)")
-    print(f"  wrote table_S1d_VIF.csv               ({len(df_vif)} rows)")
-
-    print("[Table S2] component top SNVs ...")
+    print("[Table S1] component top SNVs ...")
     df_snv = extract_top_snvs()
     df_snv["H_loading"] = df_snv["H_loading"].round(4)
-    df_snv.to_csv(SUPP_TAB / "table_S2_component_top_snvs.csv", index=False)
-    print(f"  wrote table_S2_component_top_snvs.csv ({len(df_snv)} rows)")
+    df_snv.to_csv(SUPP_TAB / "Table_S1_top_SNVs.csv", index=False)
+    print(f"  wrote Table_S1_top_SNVs.csv ({len(df_snv)} rows)")
 
-    print("[Table S3] matched permutation ...")
+    print("[Table S2] matched permutation ...")
     perm = pd.read_csv(SRC / "permutation_all_components.csv")
     # Replace empirical_p = 0 (10,000-perm floor) with the floor string.
     n_perm_floor = 1.0 / 10_000
@@ -425,49 +255,39 @@ def main():
         if pd.isna(p): return ""
         return f"<{n_perm_floor:.0e}" if p <= 0 else f"{p:.4f}"
     perm["empirical_p_reported"] = perm["empirical_p"].apply(_fmt_p)
-    perm.to_csv(SUPP_TAB / "table_S3_matched_permutation.csv", index=False)
+    perm.to_csv(SUPP_TAB / "Table_S2_permutation.csv", index=False)
     n_floor = int((perm["empirical_p"] <= 0).sum())
-    print(f"  wrote table_S3_matched_permutation.csv  ({len(perm)} rows; "
+    print(f"  wrote Table_S2_permutation.csv  ({len(perm)} rows; "
            f"{n_floor} rows hit the {n_perm_floor:.0e} floor)")
 
-    print("[Table S4] GTEx tissue eQTL NES ...")
+    print("[Table S3] GTEx tissue eQTL NES ...")
     df_tis = merge_gtex_tissue_NES()
-    df_tis.to_csv(SUPP_TAB / "table_S4_gtex_tissue_eqtl_NES.csv", index=False)
-    print(f"  wrote table_S4_gtex_tissue_eqtl_NES.csv ({len(df_tis)} rows)")
+    df_tis.to_csv(SUPP_TAB / "Table_S3_GTEx_NES.csv", index=False)
+    print(f"  wrote Table_S3_GTEx_NES.csv ({len(df_tis)} rows)")
 
-    print("[Table S5] LDA vs NMF ...")
+    print("[Table S4] LDA vs NMF ...")
     shutil.copy2(SRC / "supp_1_lda_vs_nmf.csv",
-                  SUPP_TAB / "table_S5_lda_vs_nmf.csv")
+                  SUPP_TAB / "Table_S4_LDA_vs_NMF.csv")
 
-    print("[Table S6] NMF rank cophenetic ...")
+    print("[Table S5] NMF rank cophenetic ...")
     shutil.copy2(SRC / "supp_2_cophenetic_k.csv",
-                  SUPP_TAB / "table_S6_nmf_rank_cophenetic.csv")
+                  SUPP_TAB / "Table_S5_rank.csv")
 
-    print("[Table S7] NMF seed stability ...")
+    print("[Table S6] NMF seed stability ...")
     shutil.copy2(SRC / "supp_3_seed_stability_per_component.csv",
-                  SUPP_TAB / "table_S7_nmf_seed_stability.csv")
-    shutil.copy2(SRC / "supp_3_seed_stability.csv",
-                  SUPP_TAB / "table_S7b_nmf_seed_stability_per_seed.csv")
+                  SUPP_TAB / "Table_S6_seed.csv")
 
-    print("[Table S8] tag SNP → NMF component mapping ...")
+    print("[Table S7A/S7B] tag SNP → NMF component mapping ...")
     df_s8_long, df_s8_wide = build_table_s8()
-    df_s8_long.to_csv(SUPP_TAB / "table_S8_tag_snp_component_mapping.csv",
-                       index=False)
-    df_s8_wide.to_csv(SUPP_TAB / "table_S8_tag_snp_component_mapping_wide.csv",
-                       index=False)
-    print(f"  wrote table_S8_tag_snp_component_mapping.csv "
-           f"({len(df_s8_long)} long rows)")
-    print(f"  wrote table_S8_tag_snp_component_mapping_wide.csv "
-           f"({len(df_s8_wide)} tag SNPs)")
+    df_s8_long.to_csv(SUPP_TAB / "Table_S7A_tags_long.csv", index=False)
+    df_s8_wide.to_csv(SUPP_TAB / "Table_S7B_tags_wide.csv", index=False)
+    print(f"  wrote Table_S7A_tags_long.csv ({len(df_s8_long)} long rows)")
+    print(f"  wrote Table_S7B_tags_wide.csv ({len(df_s8_wide)} tag SNPs)")
 
-    print("[Table S9] LIRI sensitivity + multiple testing ...")
-    if (SRC / "supp_6_liri_sensitivity.csv").exists():
-        shutil.copy2(SRC / "supp_6_liri_sensitivity.csv",
-                      SUPP_TAB / "table_S9_liri_sensitivity.csv")
-        shutil.copy2(SRC / "supp_6_multiple_testing_section_C.csv",
-                      SUPP_TAB / "table_S9b_multiple_testing.csv")
-        print(f"  wrote table_S9_liri_sensitivity.csv")
-        print(f"  wrote table_S9b_multiple_testing.csv")
+    print("[Table S8] cross-tissue NES sign coherence ...")
+    shutil.copy2(SRC / "axis_sign_coherence_matrix.csv",
+                  SUPP_TAB / "Table_S8_sign_coh.csv")
+    print("  wrote Table_S8_sign_coh.csv")
 
     # ===== Figures =====
     print("\n[Figures] copy with S-prefix rename ...")
@@ -475,10 +295,6 @@ def main():
         ("figure_supp_1_lda_vs_nmf",        "figure_S1_lda_vs_nmf"),
         ("figure_supp_2_cophenetic_k",      "figure_S2_cophenetic_k"),
         ("figure_supp_3_seed_stability",    "figure_S3_seed_stability"),
-        ("figure_supp_4_liri_weighted",     "figure_S4_liri_weighted"),
-        ("figure_supp_5_liri_hlaa_conditioning",
-                                              "figure_S5_liri_hlaa_diagnostic"),
-        ("figure_supp_6_liri_sensitivity",  "figure_S6_liri_sensitivity"),
     ]
     for src_stem, dst_stem in fig_map:
         for ext in (".pdf", ".png"):
@@ -488,7 +304,7 @@ def main():
 
     # ===== Index =====
     print("\n[INDEX] writing SUPPLEMENTARY_INDEX.md ...")
-    write_index(df_main, df_snv, df_vif, df_tis)
+    write_index(df_snv, df_tis)
 
     # ===== Summary =====
     n_fig = len(list(SUPP_FIG.glob("*.pdf")))
@@ -497,7 +313,7 @@ def main():
            f"supplementary/tables = {n_tab} CSVs")
 
 
-def write_index(df_s1, df_s2, df_vif, df_s4):
+def write_index(df_s2, df_s4):
     """Write the SUPPLEMENTARY_INDEX.md with caption + key numbers per item."""
     lines = []
     lines.append("# Supplementary materials index — pre-AJHG submission")
@@ -511,7 +327,7 @@ def write_index(df_s1, df_s2, df_vif, df_s4):
     lines.append("")
 
     # Figures
-    lines.append("## Supplementary Figures (7)")
+    lines.append("## Supplementary Figures (4)")
     lines.append("")
     lines.append("**Figure S1 — Comparison of NMF and LDA decomposition on the same "
                   "rs2596542-T carrier haplotype matrix.**")
@@ -551,58 +367,10 @@ def write_index(df_s1, df_s2, df_vif, df_s4):
                   "MICA-enriched recovered in 46/49 (94 %) seeds; "
                   "HLA-B-enriched recovered in 49/49 (100 %) seeds.")
     lines.append("")
-    lines.append("**Figure S4 — LIRI-JP c5 score weighting sensitivity.**")
-    lines.append("Source: `supp_4_liri_weighted.py`. "
-                  "Three c5 score definitions are compared: unweighted top-5 % SNV burden "
-                  "(n = 335 NMF SNVs available in LIRI), H-loading-weighted across all "
-                  "7,116 NMF SNVs, and NNLS projection of LIRI dosage onto the 1000G "
-                  "NMF basis. Panel (a) — unweighted vs weighted scatter; (b) unweighted "
-                  "vs NNLS; (c) forest plot of c5 β on log₂(HLA-C TPM) under the full "
-                  "M3 model (c5 + clinical + immune_PC1 + log₂(HLA-A); the same model "
-                  "as Table S1 row B and Supplementary Figure S5). "
-                  "**Key values** (n = 117; complete-case from 122 LIRI-JP donors with "
-                  "matched genotype + RNA-seq, after dropping 5 donors with missing "
-                  "T_stage or non-standard viral_status): Pearson r between unweighted "
-                  "and weighted = 0.79; β (unweighted / weighted / NNLS) = "
-                  "−0.193 / −0.160 / −0.175; all P < 0.005 in M3.")
-    lines.append("")
-    lines.append("**Figure S5 — HLA-A adjustment diagnostic for the LIRI-JP regression "
-                  "of HLA-C on c5.**")
-    lines.append("Source: `supp_5_liri_hlaa_conditioning.py`. "
-                  "Diagnostic for whether HLA-A acts as a confounder of the c5 → HLA-C ↓ "
-                  "association or as a precision-improving covariate capturing pan-class-I "
-                  "shared expression variance. Panel (a) — c5 score vs log₂(HLA-A); "
-                  "(b) — log₂(HLA-A) vs log₂(HLA-C); (c) — c5 score vs HLA-C residual "
-                  "after regressing out HLA-A; (d) — forest plot of c5 β across M0–M3. "
-                  "**Key values** (n = 117; complete-case from 122 LIRI-JP donors with "
-                  "matched genotype + RNA-seq): c5 ⊥ HLA-A (Pearson r = −0.04, p = 0.64); "
-                  "HLA-A explains 70 % of HLA-C variance; c5 vs HLA-C residual r = −0.37, "
-                  "p = 5 × 10⁻⁵ (stronger than the raw r = −0.22); SE shrinkage M2 → M3 "
-                  "= −30 %; β change = +19 % (suppression direction); "
-                  "VIF(c5) = 1.10, VIF(HLA-A) = 2.10.")
-    lines.append("")
-    lines.append("**Figure S6 — LIRI-JP HLA-C regression sensitivity to analytic-sample "
-                  "choice and multiple-testing context.**")
-    lines.append("Source: `supp_6_liri_sensitivity.py`. "
-                  "Three sensitivities: S1 (whitespace-trim of `viral_status` strings, "
-                  "n: 117 → 120), S2 (S1 + re-assigning HBV+HCV co-infected donors to "
-                  "HCV, n → 122), and S3 (c5 × viral_status interaction term on the "
-                  "primary n = 117 set). Panel (a) — sensitivity forest plot; "
-                  "(b) — −log₁₀(p) for the 7-outcome family (Table S1 section C) "
-                  "under raw, BH-FDR, and Bonferroni adjustment. **Key values**: "
-                  "primary β = −0.191 (p = 5×10⁻⁴), S1 β = −0.185 (p = 7×10⁻⁴), "
-                  "S2 β = −0.187 (p = 5×10⁻⁴); c5 × HCV interaction term β = +0.18, "
-                  "p = 0.24 (NS); c5 × NBNC term β = −0.05, p = 0.78 (NS). HLA-C is "
-                  "the only outcome that survives both BH-FDR and Bonferroni "
-                  "(adjusted p = 0.0037 by both methods, α = 0.05); the six other "
-                  "tested gene outcomes are pure null after correction. "
-                  "Locus specificity confirmed.")
-    lines.append("")
-
-    lines.append("**Figure S7 — Reference-panel replication and NMF extension of "
+    lines.append("**Figure S4 — Reference-panel replication and NMF extension of "
                   "the COMT Val158Met flip-flop example.**")
-    lines.append("Source: `figure_S7_comt_flipflop.py` "
-                  "(consumes `~/analyses/comt_flipflop_nmf/tables/comt_pair_metrics_by_pop.tsv`, "
+    lines.append("Source: `figure_S4_comt_flipflop.py` "
+                  "(consumes `data/comt_flipflop_nmf/tables/comt_pair_metrics_by_pop.tsv`, "
                   "`comt_component_mixture_by_rs4680_status.tsv`, "
                   "`comt_component_mixture_by_pop.tsv`). "
                   "(A) Population-conditional signed LD and asymmetry component C for "
@@ -620,27 +388,9 @@ def write_index(df_s1, df_s2, df_vif, df_s4):
     lines.append("")
 
     # Tables
-    lines.append("## Supplementary Tables (10)")
+    lines.append("## Supplementary Tables (9)")
     lines.append("")
-    lines.append("**Table S1 — LIRI-JP regression models.**")
-    lines.append("Built by `make_supplementary_package.py` from "
-                  "`liri_c5_score.csv`, `EGA_clinical_matched.csv`, and "
-                  "`tpm_gene_named.csv`. Multi-section table:")
-    lines.append("")
-    lines.append("- *Section A*: HLA-C ~ c5 (unweighted) progressive adjustment "
-                  "M0 (c5 only) → M1 (+ clinical) → M2 (+ immune_PC1) → M3 (+ HLA-A).")
-    lines.append("- *Section B*: HLA-C M3 full model with three c5 score variants "
-                  "(unweighted / H-loading-weighted / NNLS-projected).")
-    lines.append("- *Section C*: M3 full model fit to each MHC class-I / class-III "
-                  "outcome (HLA-B, HLA-C, MICA, MICB, HCG27, HCP5, HLA-A).")
-    f"  Reports columns: section, label, outcome, score, n, β, SE, t, p, "
-    f"95 % CI, R², covariates_in_model."
-    lines.append("- Companion `table_S1d_VIF.csv` reports VIF for every predictor in the "
-                  "full M3 design matrix (c5 + clinical + immune_PC1 + HLA-A).")
-    s1_n = len(df_s1)
-    lines.append(f"  **Rows**: {s1_n} regression rows + 8 VIF rows.")
-    lines.append("")
-    lines.append("**Table S2 — Top-signature SNVs defining NMF components in rs2596542-T carrier haplotypes.**")
+    lines.append("**Table S1 — Top-signature SNVs defining NMF components in rs2596542-T carrier haplotypes.**")
     lines.append("Built by `make_supplementary_package.py` from "
                   "`results/nmf_H_26_k8.parquet` and "
                   "`results/region_per_partner_26.csv`. "
@@ -659,7 +409,7 @@ def write_index(df_s1, df_s2, df_vif, df_s4):
                   "whether the SNV is a GTEx Whole_Blood *cis*-eQTL for that gene). "
                   f"**Rows**: {len(df_s2)} (8 components × 355).")
     lines.append("")
-    lines.append("**Table S3 — Matched permutation for component-level enrichment.**")
+    lines.append("**Table S2 — Matched permutation for component-level enrichment.**")
     lines.append("Source: `permutation_all_components.py`. "
                   "Per (NMF component × test set) MAF×distance matched permutation, "
                   "10,000 perms. Test sets: r-flip / C-flip / class-flip / "
@@ -674,7 +424,7 @@ def write_index(df_s1, df_s2, df_vif, df_s4):
                   "as **P < 1×10⁻⁴** (the 10,000-permutation floor) in the "
                   "`empirical_p_reported` column.")
     lines.append("")
-    lines.append("**Table S4 — c5 axis eQTL direction across GTEx tissues.**")
+    lines.append("**Table S3 — c5 axis eQTL direction across GTEx tissues.**")
     lines.append("Source: `eqtl_axis_test.py`, `liver_replication.py`, "
                   "`external_tissue_replication.py`. "
                   "Per (analysis_block, component, tissue, target_gene): n_overlap, "
@@ -692,24 +442,22 @@ def write_index(df_s1, df_s2, df_vif, df_s4):
                   "*not* duplicates of the Whole_Blood / Liver primary block; they "
                   "describe the same component evaluated in different tissues.")
     lines.append("")
-    lines.append("**Table S5 — LDA vs NMF c5-analogue enrichment.**")
+    lines.append("**Table S4 — LDA vs NMF c5-analogue enrichment.**")
     lines.append("Source: `supp_1_lda_comparison.py`. "
                   "Side-by-side fold enrichment for NMF c5 and LDA c5-analogue (Hungarian-"
                   "matched) on 6 test sets (5 eQTL gene sets + C-flip).")
     lines.append("")
-    lines.append("**Table S6 — NMF rank cophenetic and reconstruction error.**")
+    lines.append("**Table S5 — NMF rank cophenetic and reconstruction error.**")
     lines.append("Source: `supp_2_cophenetic_k.py`. "
                   "Per k ∈ {2, 3, ..., 12}: cophenetic_corr, dispersion, "
                   "mean_recon_err, std_recon_err over 20 random-initialization seeds.")
     lines.append("")
-    lines.append("**Table S7 — NMF seed stability per component.**")
+    lines.append("**Table S6 — NMF seed stability per component.**")
     lines.append("Source: `supp_3_seed_stability.py`. "
                   "Per component (c0..c7): mean / min / std of Hungarian-matched H-row "
-                  "Pearson correlation across 49 seeds vs seed 0 reference. "
-                  "Companion `table_S7b_nmf_seed_stability_per_seed.csv` lists per-seed "
-                  "matched correlations and MICA / HLA-B label recovery flags.")
+                  "Pearson correlation across 49 seeds vs seed 0 reference.")
     lines.append("")
-    lines.append("**Table S8 — Tag SNP → NMF component mapping.**")
+    lines.append("**Table S7 — Tag SNP → NMF component mapping (S7A long, S7B wide).**")
     lines.append("Source: `tag_snp_component_map.py`, with biological-role annotations "
                   "added by `make_supplementary_package.py`. "
                   "Four manuscript-relevant tag SNPs (`rs2596542` anchor; "
@@ -728,14 +476,14 @@ def write_index(df_s1, df_s2, df_vif, df_s4):
                   "(rs2596542: 374 bp; rs11509487: 43 bp). "
                   "Two CSV variants are provided:")
     lines.append("")
-    lines.append("- `table_S8_tag_snp_component_mapping.csv` — long format "
+    lines.append("- `Table_S7A_tags_long.csv` — long format "
                   "(1 row per (tag SNP × component); 32 rows). "
                   "Columns: rsID, biological_role, grch37_pos, in_NMF_set, "
                   "component, H_loading, rank_within_component_descending, "
                   "rank_percentile_within_component, in_top_5pct_of_H_loadings, "
                   "nearest_NMF_SNV_position, distance_bp_to_nearest_NMF_SNV, "
                   "distance_bp_to_nearest_top5pct_SNV.")
-    lines.append("- `table_S8_tag_snp_component_mapping_wide.csv` — wide format "
+    lines.append("- `Table_S7B_tags_wide.csv` — wide format "
                   "(1 row per tag SNP; 4 rows). "
                   "Columns: rsID, biological_role, grch37_pos, in_NMF_set, "
                   "H_c0..H_c7, in_top5pct_c0..c7, best_component, "
@@ -768,23 +516,10 @@ def write_index(df_s1, df_s2, df_vif, df_s4):
                   "represents a haplotypic background that is uncharacterised in the "
                   "existing tag-SNP literature.")
     lines.append("")
-    lines.append("**Table S9 — LIRI-JP regression sensitivities and multiple-testing.**")
-    lines.append("Source: `supp_6_liri_sensitivity.py`. Two CSV files:")
-    lines.append("")
-    lines.append("- `table_S9_liri_sensitivity.csv` — per-row analysis label "
-                  "(Primary n=117, S1 whitespace-trim n=120, S2 + HBV+HCV→HCV n=122, "
-                  "S3 c5 × viral interaction terms), c5 β, SE, 95 % CI, p, R². "
-                  "Confirms β stays in [−0.187, −0.191] across analytic-sample "
-                  "definitions; interaction terms NS (HCV p = 0.24, NBNC p = 0.78).")
-    lines.append("- `table_S9b_multiple_testing.csv` — Table S1 section C (7 gene "
-                  "outcomes under M3 full model) augmented with BH-FDR and Bonferroni "
-                  "adjusted p-values. HLA-C survives both corrections (adjusted p = "
-                  "0.0037); the other six outcomes do not.")
-    lines.append("")
-    lines.append("**Table S10 — Cross-tissue NES direction analysis (Axis I + Axis II).**")
+    lines.append("**Table S8 — Cross-tissue NES direction analysis (Axis I + Axis II).**")
     lines.append("Source: `axis_sign_coherence_matrix.py`. Companion to Figure 3 panel (c).")
     lines.append("")
-    lines.append("- `table_S10_axis_sign_coherence.csv` — for every "
+    lines.append("- `Table_S8_sign_coh.csv` — for every "
                   "(component × tissue × gene) combination in "
                   "{c4, c5, c6} × {Whole_Blood, Liver, Cells_EBV-transformed_lymphocytes (LCL), "
                   "Lung, Skin_Sun_Exposed_Lower_leg, Colon_Transverse} × {MICA, HLA-B, HLA-C}, "
@@ -802,41 +537,8 @@ def write_index(df_s1, df_s2, df_vif, df_s4):
     lines.append("")
     lines.append("---")
     lines.append("")
-    lines.append("## LIRI-JP analytic sample-size note (n = 122 vs n = 117)")
-    lines.append("")
-    lines.append("LIRI-JP included **122** donors with both germline genotype (rs2596542 "
-                  "carriers + c5 top-signature SNVs available in `LIRI-JP_MHC_germline.vcf.gz`) "
-                  "and tumour RNA-seq (EGA-derived TPM matrix; gene symbols indexed). "
-                  "Univariate analyses (raw c5 score vs HLA-C, etc.) and the c5 tertile "
-                  "boxplot in main Figure 5 (a) use n = 122.")
-    lines.append("")
-    lines.append("All **multivariable regression models** (Table S1 sections A–C, "
-                  "Supplementary Figures S4 and S5) require complete data on c5 score, "
-                  "expression, T_stage, viral_status (∈ {HBV, HCV, NBNC}), age, sex, "
-                  "and HLA-A / immune-marker TPM. Five donors are dropped from the "
-                  "complete-case subset because of missing T_stage or non-standard "
-                  "viral_status entries (`HBV, HCV` co-infection, n = 2; whitespace-suffix "
-                  "entries `HBV `, `HCV `, n = 3). The complete-case n is therefore **117**.")
-    lines.append("")
-    lines.append("Manuscript wording (insert into Methods):")
-    lines.append("")
-    lines.append("> *LIRI-JP included 122 donors with matched genotype and RNA-seq data; "
-                  "complete-case multivariable regression models including all covariates "
-                  "(T_stage, viral_status, age, sex, immune-marker expression, log₂(HLA-A)) "
-                  "were performed in 117 donors after exclusion of 5 donors with missing "
-                  "T_stage or non-standard viral_status entries.*")
-    lines.append("")
-    lines.append("---")
-    lines.append("")
     lines.append("## Excluded from supplementary (decisions log)")
     lines.append("")
-    lines.append("- **Survival analysis** (`liri_c5_survival.py`, "
-                  "`results/liri_c5_survival_cox.csv`, "
-                  "`results/figure_liri_c5_survival.{pdf,png}`) — DROPPED on 2026-05-08. "
-                  "n = 117 with only 16 disease-specific death events, too underpowered "
-                  "for primary AJHG submission. Files kept in repo for reproducibility "
-                  "and for re-analysis if a replication cohort becomes available, but "
-                  "not cited, summarised, or supplied as Supplementary in the manuscript.")
     lines.append("- **Internal PASS/FAIL summary** (`results/supp_combined_summary.csv`) — "
                   "internal QA artifact, not for publication. The thresholds it encodes "
                   "(matched corr > 0.7, cophenetic-within-0.05, score corr > 0.8) are "
@@ -854,28 +556,20 @@ def write_index(df_s1, df_s2, df_vif, df_s4):
     lines.append("│   ├── figure_S1_lda_vs_nmf.{pdf,png}")
     lines.append("│   ├── figure_S2_cophenetic_k.{pdf,png}")
     lines.append("│   ├── figure_S3_seed_stability.{pdf,png}")
-    lines.append("│   ├── figure_S4_liri_weighted.{pdf,png}")
-    lines.append("│   ├── figure_S5_liri_hlaa_diagnostic.{pdf,png}")
-    lines.append("│   ├── figure_S6_liri_sensitivity.{pdf,png}")
-    lines.append("│   ├── figure_S7_comt_flipflop.{pdf,png}")
+    lines.append("│   ├── figure_S4_comt_flipflop.{pdf,png}")
     lines.append("│   └── _archive/")
     lines.append("│       ├── figure_2_branch_composition.{pdf,png}")
     lines.append("│       └── figure_S_coarse_carrier_space_k2_k5.{pdf,png}")
     lines.append("└── tables/")
-    lines.append("    ├── table_S1_regression_models.csv")
-    lines.append("    ├── table_S1d_VIF.csv")
-    lines.append("    ├── table_S2_component_top_snvs.csv")
-    lines.append("    ├── table_S3_matched_permutation.csv")
-    lines.append("    ├── table_S4_gtex_tissue_eqtl_NES.csv")
-    lines.append("    ├── table_S5_lda_vs_nmf.csv")
-    lines.append("    ├── table_S6_nmf_rank_cophenetic.csv")
-    lines.append("    ├── table_S7_nmf_seed_stability.csv")
-    lines.append("    ├── table_S7b_nmf_seed_stability_per_seed.csv")
-    lines.append("    ├── table_S8_tag_snp_component_mapping.csv")
-    lines.append("    ├── table_S8_tag_snp_component_mapping_wide.csv")
-    lines.append("    ├── table_S9_liri_sensitivity.csv")
-    lines.append("    ├── table_S9b_multiple_testing.csv")
-    lines.append("    └── table_S10_axis_sign_coherence.csv")
+    lines.append("    ├── Table_S1_top_SNVs.csv")
+    lines.append("    ├── Table_S2_permutation.csv")
+    lines.append("    ├── Table_S3_GTEx_NES.csv")
+    lines.append("    ├── Table_S4_LDA_vs_NMF.csv")
+    lines.append("    ├── Table_S5_rank.csv")
+    lines.append("    ├── Table_S6_seed.csv")
+    lines.append("    ├── Table_S7A_tags_long.csv")
+    lines.append("    ├── Table_S7B_tags_wide.csv")
+    lines.append("    └── Table_S8_sign_coh.csv")
     lines.append("```")
     lines.append("")
 
