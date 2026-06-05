@@ -134,6 +134,7 @@ default relative path, so a fresh checkout with data placed under
 | `threshold_sensitivity.py` | top-1% / 5% / 10% threshold sensitivity |
 | `liver_replication.py` | GTEx Liver replication of c5 axis |
 | `external_tissue_replication.py` | GTEx LCL / Lung / Skin replication |
+| `scripts/robustness_ldclump.py`, `scripts/robustness_eqtlgen_sensitivity.py`, `scripts/robustness_dice_sensitivity.py` | added robustness checks: LD-clump to independent loci, and c5-direction replication in eQTLGen whole-blood and DICE immune-cell cis-eQTL (writes `results/robustness_*`) |
 
 ### Phase 6 — LIRI-JP HCC validation
 | Script | Purpose |
